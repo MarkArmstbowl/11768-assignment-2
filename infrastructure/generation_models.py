@@ -85,6 +85,7 @@ class MinistralServer:
             "--load-format", "mistral",
             "--tool-call-parser", "mistral",
             "--enable-auto-tool-choice",
+            "--limit-mm-per-prompt", '{"image": 0}',
             "--max-num-seqs", "2",
             "--max-model-len", "32768",
             "--max-num-batched-tokens", "32768",
