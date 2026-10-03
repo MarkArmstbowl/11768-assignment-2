@@ -1,0 +1,37 @@
+schema_version = "1.4"
+artifacts = ["/app/figure.png", "/app/plot.py", "/app/plotted_values.json"]
+
+[task]
+name = "cmu-11768/filtered_net_revenue"
+version = "1.0.0"
+description = "Completed-order net revenue by region, with an explicit zero category."
+keywords = ["visualization", "matplotlib", "deterministic-verifier"]
+
+[[task.authors]]
+name = "Yubo Chen"
+
+[metadata]
+task_class = "data_design_separation"
+chart_family = "bar"
+source = "tasks/filtered_net_revenue/task.json"
+
+[verifier]
+timeout_sec = 600.0
+
+[verifier.env]
+
+[agent]
+timeout_sec = 900.0
+
+[environment]
+network_mode = "no-network"
+build_timeout_sec = 900.0
+os = "linux"
+cpus = 1
+memory_mb = 2048
+mcp_servers = []
+
+[environment.env]
+MPLBACKEND = "Agg"
+
+[solution.env]

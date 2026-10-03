@@ -1,0 +1,37 @@
+schema_version = "1.4"
+artifacts = ["/app/figure.png", "/app/plot.py", "/app/plotted_values.json"]
+
+[task]
+name = "cmu-11768/shared_axis_scope"
+version = "1.0.0"
+description = "Two vertically arranged sensor traces with shared scale and figure-level unit labels."
+keywords = ["visualization", "matplotlib", "deterministic-verifier"]
+
+[[task.authors]]
+name = "Yubo Chen"
+
+[metadata]
+task_class = "scoped_design_labels"
+chart_family = "multi_panel_line"
+source = "tasks/shared_axis_scope/task.json"
+
+[verifier]
+timeout_sec = 600.0
+
+[verifier.env]
+
+[agent]
+timeout_sec = 900.0
+
+[environment]
+network_mode = "no-network"
+build_timeout_sec = 900.0
+os = "linux"
+cpus = 1
+memory_mb = 2048
+mcp_servers = []
+
+[environment.env]
+MPLBACKEND = "Agg"
+
+[solution.env]
