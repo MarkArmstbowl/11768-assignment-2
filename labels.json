@@ -1,0 +1,93 @@
+{
+  "labels": [
+    {
+      "run_id": "filtered_net_revenue__glm",
+      "errors": []
+    },
+    {
+      "run_id": "filtered_net_revenue__ministral",
+      "errors": []
+    },
+    {
+      "run_id": "filtered_net_revenue__qwen",
+      "errors": [
+        {
+          "family": "execution_failure",
+          "evidence": "No final figure.png is present, and result.json records artifact_present=false and exit_status=LimitsExceeded. Seventeen of the 20 executed actions invoke bare python3 without a script or supplied plotting code; these actions return empty output rather than producing the required chart."
+        }
+      ]
+    },
+    {
+      "run_id": "panel_unit_labels__glm",
+      "errors": []
+    },
+    {
+      "run_id": "panel_unit_labels__ministral",
+      "errors": []
+    },
+    {
+      "run_id": "panel_unit_labels__qwen",
+      "errors": [
+        {
+          "family": "execution_failure",
+          "evidence": "No final figure.png is present, and result.json records artifact_present=false and exit_status=LimitsExceeded. The first plotting attempt raises KeyError: 'Sales channel'. Even after displaying the actual channel,orders,refund_rate_pct CSV header, the agent repeats 15 plotting commands that select the nonexistent 'Order count' column, each failing with KeyError before plt.savefig('figure.png')."
+        }
+      ]
+    },
+    {
+      "run_id": "pooled_success_rates__glm",
+      "errors": []
+    },
+    {
+      "run_id": "pooled_success_rates__ministral",
+      "errors": []
+    },
+    {
+      "run_id": "pooled_success_rates__qwen",
+      "errors": [
+        {
+          "family": "execution_failure",
+          "evidence": "No final figure.png is present, and result.json records artifact_present=false and exit_status=LimitsExceeded. Three plotting attempts call pd.to_datetime on the month names and raise OutOfBoundsDatetime before saving a figure. Fifteen attempts to install pandas==1.3.5 also fail during the build with ModuleNotFoundError: No module named 'pkg_resources'; no successful plotting attempt follows."
+        }
+      ]
+    },
+    {
+      "run_id": "semantic_unit_labels__glm",
+      "errors": []
+    },
+    {
+      "run_id": "semantic_unit_labels__ministral",
+      "errors": []
+    },
+    {
+      "run_id": "semantic_unit_labels__qwen",
+      "errors": []
+    },
+    {
+      "run_id": "shared_axis_scope__glm",
+      "errors": []
+    },
+    {
+      "run_id": "shared_axis_scope__ministral",
+      "errors": [
+        {
+          "family": "wrong_chart",
+          "evidence": "The task requires the single figure-level x-axis label 'Elapsed time (s)' beneath the pair of panels. In the final saved image, that label is inside the lower panel's plotting area just above its bottom spine, not beneath the panels. The executed code does create figure-level text, so the violation is its requested position, not the absence of a figure-level label."
+        },
+        {
+          "family": "hard_to_read",
+          "evidence": "In the final saved image, the shared vertical label 'Amplitude (V)' overlaps numerical y-axis tick text near the junction of the panels, including -0.2 in the upper panel and 1.25 in the lower panel. The intersecting text makes those ticks and parts of the axis label difficult to read."
+        }
+      ]
+    },
+    {
+      "run_id": "shared_axis_scope__qwen",
+      "errors": [
+        {
+          "family": "execution_failure",
+          "evidence": "No final figure.png is present, and result.json records artifact_present=false. The agent attempts to download sensors.csv from a placeholder yourusername/yourrepo GitHub URL, receives HTTP 404, and then issues COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT without executing any plotting code. The outcome is Submitted, but the required figure was not delivered."
+        }
+      ]
+    }
+  ]
+}

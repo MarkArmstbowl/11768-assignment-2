@@ -1,0 +1,5 @@
+channel,orders,refund_rate_pct
+Retail,120,4
+Wholesale,75,8
+Online,210,3
+Partners,45,6
