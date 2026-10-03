@@ -948,15 +948,11 @@ class ChartJudgmentTests(unittest.TestCase):
     def test_wrong_data_and_wrong_chart_can_coexist_without_old_combined_checker(self):
         data = [Error(family=ErrorFamily.WRONG_DATA, evidence="The plotted magnitude values are doubled.")]
         chart = [Error(family=ErrorFamily.WRONG_CHART, evidence="The requested polar projection is absent.")]
-        with patch("validator.solution.baseline._ask", return_value=data) as ask, patch(
+        with patch("validator.solution.judge_data", return_value=data) as data_check, patch(
             "validator.solution.judge_chart", return_value=chart
         ), patch("validator.solution.baseline.judge_data_and_chart") as old_combined:
             errors = solution.judge_data_and_chart(self.run)
-        ask.assert_called_once_with(
-            self.run,
-            ErrorFamily.WRONG_DATA,
-            "Does the plotted data differ from what was requested in any way?",
-        )
+        data_check.assert_called_once_with(self.run)
         old_combined.assert_not_called()
         self.assertEqual(errors, data + chart)
         Prediction(run_id=self.run.run_id, errors=errors)
