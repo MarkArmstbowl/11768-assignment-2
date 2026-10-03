@@ -51,6 +51,9 @@ implementation and writing assistance as described above.
   terminal output and errors for diagnosis. I authorized the assistant to
   perform subsequent repetitive Harbor verification and offline tests, so I
   do not claim that I personally ran every development check.
+  I also ran the final Docker-backed `workflow check-submission` command
+  without skipping Harbor runs. It reported `submission valid`, with five
+  oracle rewards of 1.0 and the two mutant rewards of 0.0 and 1.0.
 - **Working on conceptual understanding.** I asked about the distinction
   between the visualization-generation agents and the validator, how validator
   predictions are compared with ground-truth labels, and what false positives

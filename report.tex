@@ -32,7 +32,9 @@ Part 4's additional validator improvement is implemented and documented below;
 the selected final source has complete 110-run seed and 15-run authored
 evaluations. The author ran both final scoring commands, obtaining
 macro-MCC $0.4462$ on seed runs and $0.5000$ on authored runs.
-The final end-to-end submission check is not claimed as completed here.
+The author also ran the complete Docker-backed submission check; it
+reported \texttt{submission valid}, with all five oracle rewards 1.0
+and the two mutant rewards 0.0 and 1.0.
 \end{quote}
 
 The four reproduced seed figures are unchanged copies in
@@ -1842,8 +1844,10 @@ task. The validator evaluated on private runs receives unseen prompts
 and trajectories without an independent answer key, so these authored
 checks cannot replace that validator.
 
-The remaining end-to-end \texttt{check-submission} run belongs after
-the Part 4 predictions, report, and AI-usage declaration are complete.
+After completing the Part 4 predictions, report, and AI-usage declaration,
+the author ran the complete end-to-end \texttt{check-submission} command.
+Its observed results are recorded in
+Section~\ref{sec:final-submission-verification}.
 
 \section{Part 4: Iterate on Your Design}
 
@@ -2582,5 +2586,44 @@ mixing implementations. The completed final authored evaluation used
 the same restored source. No further validator changes or additional
 tasks were added after selecting this version; all additional experiments
 and the rejected revision are reported above.
+
+\subsection{Final Submission Verification}
+\label{sec:final-submission-verification}
+
+After both final evaluation and scoring workflows were complete, the
+author ran the prescribed full check, without \texttt{--skip-harbor-runs}:
+\begin{verbatim}
+uv run python -m workflow check-submission
+\end{verbatim}
+The terminal reported:
+\begin{quote}
+\small
+\begin{verbatim}
+harbor rewards:
+  filtered_net_revenue    oracle  1.0
+  panel_unit_labels      oracle  1.0
+  pooled_success_rates   oracle  1.0
+  semantic_unit_labels   oracle  1.0
+  shared_axis_scope      oracle  1.0
+  filtered_net_revenue    mutant  0.0  (ignore_status, rejected)
+  filtered_net_revenue    mutant  1.0  (illegible, accepted)
+submission valid
+\end{verbatim}
+\end{quote}
+Spacing above is condensed for display. The seven saved trial results
+from the final oracle and mutant jobs under \path{jobs/}
+agree with this summary: five reference trials scored 1.0,
+\texttt{ignore\_status} scored 0.0, and \texttt{illegible} scored 1.0.
+All seven trials recorded no exception; each job reported zero errored
+trials and zero retries. These are actual Docker-backed results, not
+only the structural half of the checker.
+
+The check establishes submission structure, authored task/run/label
+coverage, and the prescribed Harbor reward contract. It does not establish
+correctness of human annotations, report explanations, or performance
+on unseen private runs. The complete 110-record seed prediction coverage,
+reported metrics, source/version correspondence, and figure dependencies
+were checked separately. The implementation, predictions, tasks, and
+reference labels were not changed after the final evaluations.
 
 \end{document}
