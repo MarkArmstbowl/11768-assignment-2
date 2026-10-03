@@ -1,0 +1,60 @@
+{
+  "predictions": [
+    {
+      "run_id": "106",
+      "errors": [
+        {
+          "family": "wrong_data",
+          "evidence": "Data mode: wrong_values. Task quote: - Use the CMRmap colormap; do NOT use the jet, rainbow or hsv colormaps. Location: Colormap. Expected: CMRmap colormap. Observed: jet colormap. Discrepancy: The plot uses the jet colormap instead of the required CMRmap colormap."
+        },
+        {
+          "family": "wrong_chart",
+          "evidence": "Requirement: Use the CMRmap colormap. Scope: The whole figure. Task quote: - Apply the CMRmap colormap to the plot. Observed violation: The plot uses the 'jet' colormap, which is explicitly prohibited. The color gradient ranges from blue to red, characteristic of the 'jet' colormap, not 'CMRmap'.\nRequirement: Do not use the jet, rainbow, or hsv colormaps. Scope: The whole figure. Task quote: - Use the CMRmap colormap; do NOT use the jet, rainbow or hsv colormaps. Observed violation: The plot uses the 'jet' colormap, which is one of the colormaps that must not be used according to the requirements.\nRequirement: Add a colorbar. Scope: The whole figure. Task quote: - Add a colorbar. Observed violation: There is no colorbar visible in the final image."
+        }
+      ]
+    },
+    {
+      "run_id": "117",
+      "errors": [
+        {
+          "family": "wrong_data",
+          "evidence": "Data mode: wrong_values. Task quote: Generate a Python code that uses the Rossler attractor equations to create a 3D plot. The plot should have 'u', 'v', and 'w' as axes, a line width of 0.5, and the title \"Rossler Attractor\". The initial values for the Rossler attractor should be (1., 1., 1.). Location: Title and axis labels. Expected: Title 'Rossler Attractor' with correct spelling and 3D axes labeled 'u', 'v', 'w'. Observed: Title shows 'Rossler Attractor' with a typo and only 'u' and 'v' axes are present, missing 'w'. Discrepancy: The title is misspelled as 'Rossler Attractor' instead of 'Rossler Attractor', and the plot is 2D, missing the 'w' axis.\nData mode: missing_data. Task quote: Generate a Python code that uses the Rossler attractor equations to create a 3D plot. The plot should have 'u', 'v', and 'w' as axes, a line width of 0.5, and the title \"Rossler Attractor\". The initial values for the Rossler attractor should be (1., 1., 1.). Location: 3D plot. Expected: 3D plot with 'u', 'v', 'w' axes. Observed: 2D plot with only 'u' and 'v' axes. Discrepancy: The plot is 2D, missing the 'w' axis required for a 3D representation of the Rossler attractor.\nData mode: wrong_selection. Task quote: Generate a Python code that uses the Rossler attractor equations to create a 3D plot. The plot should have 'u', 'v', and 'w' as axes, a line width of 0.5, and the title \"Rossler Attractor\". The initial values for the Rossler attractor should be (1., 1., 1.). Location: Axes. Expected: Axes labeled 'u', 'v', 'w'. Observed: Axes labeled 'u' and 'v' only. Discrepancy: The 'w' axis is missing, which is required by the task."
+        },
+        {
+          "family": "wrong_chart",
+          "evidence": "Requirement: Create a 3D plot. Scope: The whole figure. Task quote: - Draw the attractor in a 3D subplot. Observed violation: The final image shows a 2D plot with curves in a plane, not a 3D plot. There is no 3D coordinate system or perspective, and the z-axis is not visible. The plot appears to be a 2D projection of the Rossler attractor rather than a true 3D visualization.\nRequirement: Set the z-axis label to 'w'. Scope: The z-axis of the 3D plot. Task quote: Generate a Python code that uses the Rossler attractor equations to create a 3D plot. The plot should have 'u', 'v', and 'w' as axes, a line width of 0.5, and the title \"Rossler Attractor\". The initial values for the Rossler attractor should be (1., 1., 1.). Observed violation: The z-axis is not labeled 'w' in the final image. In fact, there is no z-axis visible in the plot, which is a 2D representation rather than a 3D plot.\nRequirement: Turn on the grid for the 3D plot. Scope: The 3D plot. Task quote: - Turn on the grid of the axes. Observed violation: The grid is not turned on in the final image. There are no horizontal or vertical gridlines visible on the plot."
+        }
+      ]
+    },
+    {
+      "run_id": "164",
+      "errors": [
+        {
+          "family": "wrong_data",
+          "evidence": "Data mode: wrong_values. Task quote: To generate a broken horizontal bar plot with gaps, use the following data and settings:  - Create the first broken bar of two segments at 98 with width 28 and at 128 with width 47, its y-position should be 10 with a height of 11,  set the facecolors of the bars to blue. Create the second broken bar of three segments at 8 with width 46, at 99 with width 22 and at 132 with width 15, its y-position should be 20 with a height of 11,set the  facecolors to orange, green and red. Use broken_barh() function to achieve the above instructions. - Set the x-axis label to 'seconds since start'. - Modify the y-axis tick labels to ['Bill', 'Jim']). Make the grid lines visible. - Add an annotation at coordinate (55, 28) to indicate \"race interrupted\" with text coordinate (0.7, 0.8), use a red arrow to do this annotation. Location: First broken bar segments. Expected: Segments at 98 (width 28) and 128 (width 47) at y=10. Observed: Segments at 8 (width 46) and 132 (width 15) at y=10. Discrepancy: The first bar (Bill) has segments at positions 8 and 132 instead of 98 and 128 as requested."
+        },
+        {
+          "family": "hard_to_read",
+          "evidence": "Readability mode: overlapping_text. Location: Top panel (y=10), x=100–125. Affected elements: Annotation text 'race interrupted' and red bar segment. Observation: The annotation text 'race interrupted' is placed directly over the red bar segment, causing visual overlap and reducing readability.. Reading impact: The annotation text and the red bar segment are visually merged, making it difficult to read the annotation and interpret the bar's value.\nReadability mode: occlusion. Location: Top panel (y=10), x=100–125. Affected elements: Annotation 'race interrupted' and red bar segment. Observation: The red arrow and text of the annotation cover the red bar segment and the grid lines, blocking the view of the data.. Reading impact: The red bar segment and the grid lines in the region (x=100–125, y=10) are partially occluded, impairing data interpretation."
+        }
+      ]
+    },
+    {
+      "run_id": "205",
+      "errors": [
+        {
+          "family": "wrong_data",
+          "evidence": "Data mode: wrong_values. Task quote: Each phase should have flow values indicating the transition magnitude between phases. For instance, the flow could be represented by hypothetical values like 100%, 20%, 20%, 20%, 20%, and 10% for each respective phase, showing a decrease in magnitude as the gadget progresses through each phase. Location: Flow values. Expected: 100%, 20%, 20%, 20%, 20%, 10%. Observed: 100, 20, 20, 20, 20, 10. Discrepancy: The flow values are incorrect; the diagram shows 100 for Phase 1 and 20 for the subsequent phases, but the final phase 'Hurray!' shows 10, which is not scaled as a percentage.\nData mode: wrong_order. Task quote: The diagram must have sequential phases labeled 'Phase 1', 'Phase 2', 'Phase 3', 'Phase 4', 'Phase 5', and 'Hurray!'. Location: Phase sequence. Expected: Sequential phases from Phase 1 to Hurray!. Observed: Reversed order from Hurray! to Phase 1. Discrepancy: The diagram shows the flow starting from 'Hurray!' and ending at 'Phase 1', which is the reverse of the requested sequential order."
+        },
+        {
+          "family": "wrong_chart",
+          "evidence": "Requirement: The diagram must have sequential phases labeled 'Phase 1', 'Phase 2', 'Phase 3', 'Phase 4', 'Phase 5', and 'Hurray!'. Scope: The whole figure. Task quote: The diagram must have sequential phases labeled 'Phase 1', 'Phase 2', 'Phase 3', 'Phase 4', 'Phase 5', and 'Hurray!'. Observed violation: The phases are labeled 'Phase 1', 'Phase 2', 'Phase 3', 'Phase 4', 'Phase 5', and 'Hurray!', but the order is reversed from the required sequence. The diagram shows 'Hurray!' at the top, followed by 'Phase 5', 'Phase 4', 'Phase 3', 'Phase 2', and 'Phase 1' at the bottom, which is the reverse of the required order."
+        },
+        {
+          "family": "hard_to_read",
+          "evidence": "Readability mode: clipped_text. Location: Top-left panel. Affected elements: Text label 'Hurray!' and the blue rectangle. Observation: The text 'Hurray!' is cut off at the top edge of the image, with the '!' character and part of the word missing, making it partially unreadable.. Reading impact: The label 'Hurray!' is not fully visible, which may confuse the reader about the final phase's name and significance."
+        }
+      ]
+    }
+  ]
+}
