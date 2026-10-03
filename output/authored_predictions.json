@@ -1,0 +1,108 @@
+{
+  "predictions": [
+    {
+      "run_id": "filtered_net_revenue__glm",
+      "errors": [
+        {
+          "family": "wrong_data",
+          "evidence": "Data mode: missing_data. Task quote: Plot one vertical bar per region in this left-to-right order: North, South, East, West. Include all four regions even if a region has no retained rows; its net revenue is then zero. Do not plot individual orders or include failed or pending orders. Location: South region bar. Expected: Bar with height 0 for South region. Observed: No bar for South region. Discrepancy: South region bar is missing from the plot, though it should be included with zero net revenue.\nData mode: wrong_order. Task quote: Plot one vertical bar per region in this left-to-right order: North, South, East, West. Include all four regions even if a region has no retained rows; its net revenue is then zero. Do not plot individual orders or include failed or pending orders. Location: Bar order. Expected: North, South, East, West. Observed: North, East, West (South missing). Discrepancy: Bars are in order North, South, East, West but South is missing, so the order is incorrect.\nData mode: wrong_selection. Task quote: Plot one vertical bar per region in this left-to-right order: North, South, East, West. Include all four regions even if a region has no retained rows; its net revenue is then zero. Do not plot individual orders or include failed or pending orders. Location: Regions plotted. Expected: All four regions: North, South, East, West. Observed: Only North, East, West. Discrepancy: The plot includes only three regions (North, East, West) but should include all four regions."
+        }
+      ]
+    },
+    {
+      "run_id": "filtered_net_revenue__ministral",
+      "errors": [
+        {
+          "family": "wrong_data",
+          "evidence": "Data mode: wrong_values. Task quote: Keep only rows whose status is exactly \"completed\". For each region, compute net revenue by summing gross minus refund over those retained rows. Location: North region bar. Expected: 165. Observed: 145. Discrepancy: North region net revenue is 145, but expected is 165 based on gross 120+60 and refund 20+15."
+        }
+      ]
+    },
+    {
+      "run_id": "filtered_net_revenue__qwen",
+      "errors": [
+        {
+          "family": "execution_failure",
+          "evidence": "The run has no delivered figure.png available for evaluation."
+        }
+      ]
+    },
+    {
+      "run_id": "panel_unit_labels__glm",
+      "errors": []
+    },
+    {
+      "run_id": "panel_unit_labels__ministral",
+      "errors": []
+    },
+    {
+      "run_id": "panel_unit_labels__qwen",
+      "errors": [
+        {
+          "family": "execution_failure",
+          "evidence": "The run has no delivered figure.png available for evaluation."
+        }
+      ]
+    },
+    {
+      "run_id": "pooled_success_rates__glm",
+      "errors": []
+    },
+    {
+      "run_id": "pooled_success_rates__ministral",
+      "errors": [
+        {
+          "family": "wrong_data",
+          "evidence": "Data mode: wrong_values. Task quote: Using matplotlib, read cohorts.csv. Each row gives successes and attempts for one group in one month. For each month, compute the overall success rate as 100 times the sum of successes divided by the sum of attempts across that month's groups. Do not take the unweighted arithmetic mean of the groups' individual success percentages, and do not pool different months together. Location: Mar point value. Expected: 60.0%. Observed: 66.0%. Discrepancy: The chart shows 66.0% for Mar, but the correct pooled rate for Mar is 60.0%."
+        }
+      ]
+    },
+    {
+      "run_id": "pooled_success_rates__qwen",
+      "errors": [
+        {
+          "family": "execution_failure",
+          "evidence": "The run has no delivered figure.png available for evaluation."
+        }
+      ]
+    },
+    {
+      "run_id": "semantic_unit_labels__glm",
+      "errors": []
+    },
+    {
+      "run_id": "semantic_unit_labels__ministral",
+      "errors": []
+    },
+    {
+      "run_id": "semantic_unit_labels__qwen",
+      "errors": []
+    },
+    {
+      "run_id": "shared_axis_scope__glm",
+      "errors": []
+    },
+    {
+      "run_id": "shared_axis_scope__ministral",
+      "errors": [
+        {
+          "family": "wrong_data",
+          "evidence": "Data mode: wrong_values. Task quote: The panels must share the x-axis scale. Use exactly one figure-level x-axis label \"Elapsed time (s)\" beneath the pair of panels and exactly one figure-level y-axis label \"Amplitude (V)\" alongside the pair. These shared figure-level labels are the requested axis labels for both panels; do not add separate per-panel x- or y-axis labels. Ordinary numeric tick labels are still allowed. Location: Top panel y-axis. Expected: Amplitude (V). Observed: None. Discrepancy: The shared y-axis label 'Amplitude (V)' is missing from the top panel, and the shared x-axis label 'Elapsed time (s)' is missing from the bottom panel."
+        },
+        {
+          "family": "hard_to_read",
+          "evidence": "Readability mode: clipped_text. Location: Bottom panel, right edge. Affected elements: Figure-level x-axis label 'Elapsed time (s)'. Observation: The text 'Elapsed time (s)' is cut off at the right edge of the image, with the final characters missing.. Reading impact: The full x-axis label is not visible, making it difficult to identify the x-axis unit without guessing."
+        }
+      ]
+    },
+    {
+      "run_id": "shared_axis_scope__qwen",
+      "errors": [
+        {
+          "family": "execution_failure",
+          "evidence": "The run has no delivered figure.png available for evaluation."
+        }
+      ]
+    }
+  ]
+}
