@@ -18,7 +18,7 @@
 
 \begin{quote}
 \small
-\textbf{Working-draft status.}
+\textbf{Final experiment summary.}
 Parts 1--2 below record the completed baseline experiment, two evidence-backed
 error analyses, both proposed implementations, and the full seed-set comparison.
 Part 3 task design, all 15 fixed-agent runs, and pre-iteration authored
@@ -28,8 +28,11 @@ structural validation, and scoring.
 The Harbor worked example and all five authored package experiments are
 complete: each reference solution scored 1.0, and the two authored mutants
 scored 0.0 and 1.0.
-Part 4 is reserved for subsequent iteration.
-This is not yet the complete report for submission.
+Part 4's additional validator improvement is implemented and documented below;
+the selected final source has complete 110-run seed and 15-run authored
+evaluations. The author ran both final scoring commands, obtaining
+macro-MCC $0.4462$ on seed runs and $0.5000$ on authored runs.
+The final end-to-end submission check is not claimed as completed here.
 \end{quote}
 
 The four reproduced seed figures are unchanged copies in
@@ -1845,21 +1848,739 @@ the Part 4 predictions, report, and AI-usage declaration are complete.
 \section{Part 4: Iterate on Your Design}
 
 \subsection{Additional Improvement Motivated by Part 3}
-\emph{Pending at least one additional improvement motivated by observed
-Part 3 results.}
+
+\paragraph{Observed motivation, not a new answer key.}
+Part 3 exposed five \texttt{wrong\_data} false positives on numerically
+correct authored figures and two \texttt{hard\_to\_read} false positives
+on legible figures (Table~\ref{tab:authored-pre}).
+For example, \path{filtered_net_revenue__ministral} was accused of a
+title difference even though the quoted titles were identical, and
+\path{pooled_success_rates__ministral} was flagged while its explanation
+recomputed the correct pooled rates. These are respectively an
+out-of-family complaint and a decision/evidence contradiction.
+The readability branch imagined annotation overlap on that pooled-rate
+figure and clipping on \path{semantic_unit_labels__qwen}, while missing
+the actual shared-y-label overlap in
+\path{shared_axis_scope__ministral}.
+The latter run also remains an important \texttt{wrong\_chart} false
+negative: this iteration changes the data and readability branches, not
+the existing chart-design audit.
+
+The common mechanism targeted here is the baseline helper's conversion
+of a leading \texttt{YES} into a family error without checking its
+supporting explanation. I replace that helper in both branches with
+family-specific structured coverage, strict response validation, and a
+bounded same-model reinspection of provisional errors or uncertainty.
+This is a general evidence-consistency change, not a rule keyed to the
+five tasks, their run IDs, or their human labels.
+
+\paragraph{Data audit: four explicit failure modes.}
+The data branch receives the requested task, input-file contents,
+executed trajectory, and final figure through the existing evidence
+transport. It asks the fixed model to independently compare the
+requested and delivered data across exactly four modes:
+\texttt{wrong\_values}, \texttt{missing\_data},
+\texttt{wrong\_selection}, and \texttt{wrong\_order}.
+The current response object has these four mode names as its fixed
+top-level keys, with no extras or omissions. Each mode contains exactly
+\texttt{status}, \texttt{evidence}, and \texttt{finding}.
+Status is \texttt{pass}, \texttt{fail}, or \texttt{uncertain}; evidence
+is a nonempty string of at most 160 characters. A mode with no applicable
+constraint still requires an explanatory pass check.
+The policy covers derived values, normalization, sampling ranges,
+data-encoded sizes/colors/error bars, missing dimensions, filters,
+extra unrequested series, and requested ordering. It explicitly separates
+these from title/axis-label wording, arbitrary styling, and readability.
+An intermediate broken command repaired before the delivered figure is
+not by itself a final data defect.
+
+For a failed mode, its \texttt{finding} is one object containing only
+\texttt{source\_id}, \texttt{location} (at most 80 characters),
+\texttt{expected}, and \texttt{observed} (at most 160 characters each).
+For pass/uncertain modes, \texttt{finding} must be JSON \texttt{null}.
+The model therefore does not repeat the mode name, task quotation, or
+evidence in a separate findings array. Internally, the program converts
+this compact response into the shared canonical checks/findings
+representation. The earlier two-array format remains a historical
+implementation choice at the first two checkpoints described below.
+The program assigns canonical IDs to the original nonempty task lines;
+the model selects an ID, and the program restores the corresponding
+source text rather than trusting a rewritten quotation.
+That source establishes the requested constraint, not the truth of the
+claimed discrepancy. The model must still compare concrete final values,
+selection, coverage, or ordering against the request.
+An alleged failure whose expected/observed descriptions are identical
+after whitespace normalization is not accepted as a confirmed defect.
+Unlike the earlier format-rejection behavior, the current compact parser
+turns that unsupported claim into provisional semantic uncertainty,
+retaining it for the single evidence reinspection. It does not infer
+that the data is correct or invent a discrepancy to repair the claim.
+The policy also states that
+numerically equal forms such as \texttt{27.5} and \texttt{27.50} are not
+errors; this broader numerical interpretation remains model-based,
+not a general symbolic or numerical equivalence proof by the parser.
+Final executed calculations, when available, are preferred to approximate
+numerical readings from pixels. A projection mistake alone does not
+establish that a requested data dimension is missing. Colormap choice,
+axis scales, title text, and marker styling are not data defects merely
+because they violate a design requirement; an actual error in the data
+encoding or values must be established separately.
+
+\paragraph{Readability audit: final pixels, six explicit modes.}
+The readability branch now inspects the original delivered PNG with
+task text as context, without CSV contents or the execution trajectory.
+This isolates visible readability from numerical correctness and from
+what plotting code claims to have drawn. Exactly one check is required
+for each of \texttt{clipped\_text}, \texttt{overlapping\_text},
+\texttt{occlusion}, \texttt{low\_contrast},
+\texttt{indistinguishable\_data}, and \texttt{squeezed\_layout}.
+A failed mode needs a localized finding naming the affected
+\texttt{location}, \texttt{elements}, visible \texttt{observation}, and
+reading \texttt{impact}, in addition to its \texttt{kind}.
+The policy distinguishes partial clipping from an entirely missing
+required label, and actual overlap or occlusion from harmless proximity
+or a legend over empty space. Numeric ticks need not repeat units already
+given by an axis label. A visible low-contrast label is not simply
+treated as an absent design element.
+
+Readability requests always retain the original PNG bytes; this branch
+does not resize the image to solve a context error and then mistake
+downsampling artifacts for defects in the delivered output.
+If the endpoint rejects the request for context length, it retries once
+without task text while preserving that original image. The omission
+is explicitly marked and cannot establish a missing requirement.
+If the image-only request still cannot fit, the operational error is
+propagated. In contrast, the data branch retains the existing evidence
+compaction transport from Part 2, including marked input/trajectory
+omissions and its in-memory image reduction when necessary. A compacted
+data judgment therefore retains the earlier evidence-loss limitation.
+
+\paragraph{Deterministic validation versus semantic confirmation.}
+Both branches request strict JSON schemas. Data uses the four-key compact
+format above; readability retains exactly \texttt{checks} and
+\texttt{findings}. Local parsing rejects duplicate JSON keys, unknown or
+missing fields, non-string or empty evidence, incomplete/duplicate
+coverage, invalid statuses, and invalid failure/finding correspondence.
+Data string bounds are stated with JSON Schema \texttt{minLength} and
+\texttt{maxLength} and also checked locally; this does not demonstrate
+that every live response will succeed. Data source IDs must belong
+to the supplied task-line map, and pass/uncertain modes must carry null
+findings. Readability failures retain exactly one localized finding per
+failed mode and none for pass/uncertain modes. These are structural and
+consistency checks. They do not prove that a model observed the right
+pixel, recomputed a formula correctly, or interpreted a requirement
+faithfully. A false explanation can still satisfy the schema.
+
+A valid all-pass response is returned without a confirmation call.
+If a check fails or is uncertain, each branch performs one grouped
+same-model reinspection against the original evidence and explicitly
+fallible provisional claims. Data requests all four compact-mode checks
+again; readability requests its full six-mode coverage. The model may
+revise those checks rather than being forced to preserve an earlier
+verdict. Both use the same fixed model, not an independent judge or a
+calibrated confidence estimate; correlated errors can persist.
+The selected final implementation does not use the additional three-gate
+support-review experiment documented under Further Changes below.
+
+Each response stage allows at most two format attempts: an initial
+attempt and one repair after invalid JSON, inconsistent fields, or a
+completion with \texttt{finish\_reason=length}. There is at most one
+semantic reinspection stage per family in a validator invocation;
+there is no open-ended loop until a preferred answer appears.
+In the current data policy, semantic uncertainty that persists after
+valid JSON and that one reinspection produces a \texttt{RuntimeWarning}
+and withholds an unconfirmed \texttt{wrong\_data} allegation. The public
+binary output has no uncertainty category, so the result is absence of
+that data-family error, not proof of data correctness. This is an
+explicit conservative classification policy: it may suppress false
+positives and avoid aborting a run over an unsupported model claim,
+but may introduce false negatives. It is not merely a transport fix,
+an automatic pass for malformed replies, or completion of missing labels.
+Malformed/truncated JSON, missing evidence, invalid source IDs, or invalid
+null/finding coupling still raise operational errors after bounded format
+repair. Interface/network exceptions propagate rather than being repaired
+as response-format errors or withheld as semantic uncertainty.
+Readability and chart-audit uncertainty
+retain their earlier operational-error behavior. A confirmed failure
+can still be returned while another mode remains uncertain, because the
+demonstrated finding already establishes that family. Context retries
+and the unchanged runner's operational retries are distinct from this
+semantic bound.
+
+The regular data and readability completion budgets are respectively
+1,536 and 2,048 tokens, replacing the baseline helper's 250-token limit
+for those two branches. Both an initial data judgment and its optional
+semantic reinspection start at 1,536 tokens. Following the incomplete
+first seed experiment described below, a data response explicitly ending
+with \texttt{finish\_reason=length} receives its one format-repair
+attempt with a bounded 3,072-token budget. Non-length format problems
+do not trigger that increase; readability remains at 2,048 tokens.
+This provides space for four/six coverage checks and specific findings;
+it does not establish that the old saved baseline answers were truncated,
+nor guarantee that a new response fits.
+Malformed or length-limited new responses are detected directly instead
+of accepted merely because their first word is \texttt{YES}.
+The output remains the prescribed list of \texttt{Error} objects;
+multiple confirmed findings of one family are combined into its evidence.
+
+\paragraph{Preserved controls and expected tradeoffs.}
+The Part 2 execution gate and scoped chart-design audit are unchanged.
+All calls still use \path{Qwen/Qwen3-VL-30B-A3B-Instruct-FP8};
+no alternate model, reference image, label file, or cross-run answer is
+consulted by \texttt{validate(run)}. The function signature and public
+prediction schema are unchanged. The five original task prompts,
+15 agent runs, and confirmed reference labels are held fixed.
+The separate pre-iteration prediction files remain the before-change
+comparators: seed macro-MCC $0.2411$ and authored macro-MCC $0.2127$.
+
+\paragraph{Initial implementation checkpoint and offline verification.}
+The first Part 4 implementation checkpoint had SHA-256:
+\begin{quote}
+\small
+\path{f818fae884b79c981e0a53b7d97ba554c6ad45e0028cba5abc8b6514824b6a48}
+\end{quote}
+At this checkpoint, all 175 local regression tests passed, including
+53 new data/readability tests in \path{tests/test_solution_evidence.py}.
+The full suite can be reproduced from the repository root with:
+\begin{verbatim}
+PYTHONWARNINGS=ignore::DeprecationWarning \
+PYTHONDONTWRITEBYTECODE=1 \
+.venv/bin/python -m unittest discover -s tests -p 'test_*.py'
+\end{verbatim}
+The synthetic-response tests checked schema/coverage invariants, bounded
+repair/reinspection, operational-error propagation, and original-PNG
+readability transport. They established implementation mechanics, not
+live judgment accuracy or MCC improvement. This identifies the initial
+source, not a later revision or completed final experiment.
+
+\paragraph{Observed operational failures and bounded robustness revision.}
+The first seed evaluation using that checkpoint produced 104 of the
+required 110 predictions. The omitted run IDs were
+\texttt{009}, \texttt{106}, \texttt{117}, \texttt{164},
+\texttt{177}, and \texttt{205}. They are missing validator outputs,
+not six new reference \texttt{execution\_failure} labels.
+The recorded terminal validation problems identify four length-limited
+data responses (009, 117, 177, and 205), an identical expected/observed
+claim (106), and duplicated or orphaned findings (164).
+The original raw failed judge responses were not stored, and the old
+terminal errors did not distinguish initial judgment from semantic
+confirmation. Consequently, the failed stage and the full content of
+each rejected answer cannot be reconstructed from that record.
+The incomplete prediction snapshot is preserved separately in
+\path{tests/diagnostics/part4_seed_incomplete_f818fae8.json}; it must not
+be presented as the final complete seed prediction file.
+
+That first revision retained strict parsing, added the length-triggered
+3,072-token data repair budget, and supplied targeted repair instructions
+for identical comparisons and orphaned/duplicate findings. They asked
+the model to re-evaluate the original evidence, never invent a discrepancy,
+and synchronize one finding per real failed mode. Attempt/reinspection
+bounds were unchanged. Terminal diagnostics added the initial/confirmation
+stage, \texttt{finish\_reason}, output budget, and response character count
+without raw content. These are general response rules, not public-ID
+exceptions; the probe below measures their limited live effect.
+
+\paragraph{First robustness checkpoint and measured repair probe.}
+The first robustness revision had SHA-256:
+\begin{quote}
+\small
+\path{0649b1409575cf4ee543a0e0a5869a5006f5168a09e89fc40a9a0db71d6a976a}
+\end{quote}
+At this checkpoint, the full local suite passed all 200 tests, including
+25 additional offline repair regressions in
+\path{tests/test_solution_repair.py}. The command above reproduces the
+suite. These synthetic-response tests cover truncation-only budget
+growth, independent initial/confirmation budgets, actual last-attempt
+diagnostics, strict contradiction/finding rejection, bounded attempts,
+unchanged readability budget, and original-evidence retention. They do
+not by themselves establish successful live completion.
+The author then ran a separate six-record repair probe using this source.
+Its preserved output,
+\path{tests/diagnostics/part4_repair_probe_0649b140.json}, contains
+four completed predictions: 106, 117, 164, and 205.
+Run 117 eventually succeeded after earlier attempts failed;
+009 and 177 remained missing. Across the runner's passes, 009 again
+reported length termination in the initial data stage despite the
+3,072-token repair budget (the reported last response length was
+6,421 characters). Run 177 reported finding-correspondence and identical
+comparison problems in initial or confirmation stages.
+The probe demonstrates four completed evaluations, not four correct
+classifications. In particular, 106 still assigned \texttt{wrong\_data}
+to a requested-versus-observed colormap difference, which is a design
+violation rather than an established numerical/data discrepancy.
+This exposes continuing family leakage even when strict JSON parses.
+The six-record probe is not a complete seed/authored scoring experiment;
+no overall final MCC or measured runtime improvement is claimed from it.
+
+\paragraph{Selected final compact-data revision and uncertainty policy.}
+The remaining verbosity and parallel-array synchronization failures
+motivated the compact four-key response described above. Bounded strings
+and nonrepeated findings reduce response redundancy without removing
+any of the four data modes. The same-value rule now treats an unsupported
+but structurally complete comparison as uncertainty for one reinspection,
+instead of repeatedly demanding a format correction for a semantic
+contradiction. The final uncertainty-withholding policy is documented
+explicitly above because it changes classification behavior and can
+reduce recall; it cannot be presented as a purely technical fix.
+Family-boundary guidance is also strengthened in response to the probe's
+colormap allegation. The normal budgets, two format attempts, one
+semantic review, fixed model, and execution/design/readability mechanisms
+remain unchanged. The six-record probe below measures live completion,
+and the complete seed result appears in the final-evaluation subsection.
+After rejecting the further experiment described below, I restored this
+exact source, not a modified variant. Its complete seed predictions
+therefore remain applicable without rerunning 110 records; the final
+authored evaluation must use this same frozen source. Resuming into a
+file from a different source would invalidate attribution.
+
+The selected final validator has SHA-256:
+\begin{quote}
+\small
+\path{f7ff977319d330c9ac78e59205cd6d745a35a1d100d770d3d5700a0e963bd2de}
+\end{quote}
+All 223 offline tests passed at this checkpoint, including 23 new compact
+protocol regressions in \path{tests/test_solution_compact_data.py}.
+After restoring the exact selected source and its fixtures, the active
+223-test suite was rerun and passed again.
+The existing data/readability integration fixtures were adapted to the
+new wire format; direct tests of canonical parsing and bounded repair
+were retained. The new tests cover fixed-key coverage, field-length and
+null/status constraints, task-source grounding, duplicate-key rejection,
+same-value claims becoming uncertainty rather than proven correctness,
+bounded reinspection, warning/withholding of unresolved semantic claims,
+preservation of other supported findings, and propagation of malformed,
+truncated, and interface failures. These tests use synthetic model
+responses and establish code behavior, not live completion, speed, or
+semantic accuracy. Both complete final evaluations are reported below.
+
+\paragraph{Measured compact-protocol probe and remaining limitations.}
+The author reran the same six previously omitted seed runs using the
+compact checkpoint and a separate prediction file,
+\path{tests/diagnostics/part4_compact_probe_predictions.json}.
+The file validates against the prescribed prediction schema and contains
+exactly one prediction for each of 009, 106, 117, 164, 177, and 205, with
+nonempty evidence and no duplicate error families. All six completed in
+the first runner sweep; the displayed sweep time was 7 minutes 50 seconds.
+This is not a controlled latency comparison: per-stage format attempts,
+serving state, and token usage were not recorded. The console emitted a
+semantic \texttt{missing\_data} uncertainty warning for 106 after the one
+reinspection. Its final output reports only \texttt{wrong\_chart}; withholding
+that unconfirmed data allegation does not prove the data correct.
+
+Completion is distinct from semantic correctness. Against the provided
+reference labels on these six records only, data has two true positives,
+one true negative, and three false positives (009, 177, and 205), with no
+false negatives. Readability has two true positives, one true negative,
+two false positives (117 and 164), and one false negative (177).
+For example, 009's final executed script contains and plots all 23 requested
+version/date pairs, but the validator alleges missing and extra versions.
+On 177 it invents a required exact panel title and treats a pie-to-bar
+design mismatch as a data defect. On 117 an actual omitted data dimension
+supports a positive data-family label, but another supporting finding
+still alleges a spelling difference between the identical title word
+\texttt{Rossler} and itself; structural validation does not prove every
+clause of a comparison. Thus a family-level true positive need not have
+wholly correct evidence. This selected six-record diagnostic resolves the
+observed completion failures in that run, not all classification or evidence
+errors. It is not substituted for either required full-set evaluation,
+and no complete-set MCC improvement is inferred from it.
+
+The initial aim was to reduce false data/readability allegations and
+better localize actual overlap. The complete seed experiment measures
+an aggregate improvement, but does not establish improved data precision:
+the data false-positive count increased substantially. Full coverage
+and reinspection may also increase runtime and model cost; same-model
+confirmation can retain correlated errors. In particular, the small
+authored set has no positive \texttt{wrong\_data} reference examples,
+so even eliminating its data false positives cannot establish data-error
+recall or change that family's insufficient-support MCC convention.
+The full seed results below belong to the selected final compact source,
+not to the rejected support-review experiment. The authored comparison
+and case-level FP/FN analysis are also reported below.
 
 \subsection{Final Evaluation on Seed and New Tasks}
-\emph{Pending separate before/after comparisons on the seed and authored
-runs, reporting all four family MCCs and macro-MCC for each subset.}
+\paragraph{Incomplete first seed run: diagnostic only.}
+For transparency, Table~\ref{tab:part4-incomplete-diagnostic} compares
+the initial Part 4 predictions with the preserved Part 2 predictions
+on their common 104 run IDs. This is an offline diagnostic calculation,
+not a completed invocation of the assignment's final scoring workflow.
+Both columns use identical IDs and the official reference eligibility
+mask: all 104 records enter execution scoring, while the 12 terminal
+reference execution failures are excluded from each other family,
+leaving 92 eligible records there. No missing prediction is filled with
+\texttt{[]} or a fabricated execution error.
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lrr}
+\toprule
+Metric & Part 2, same 104 IDs & Initial Part 4, incomplete \\
+\midrule
+\texttt{execution\_failure} & $1.0000$ & $1.0000$ \\
+\texttt{wrong\_data} & $-0.1455$ & $0.3263$ \\
+\texttt{wrong\_chart} & $0.3377$ & $0.3103$ \\
+\texttt{hard\_to\_read} & $-0.2474$ & $0.2293$ \\
+Macro-MCC & $0.2362$ & $0.4665$ \\
+\bottomrule
+\end{tabular}
+\caption{Matched-subset diagnostic for the first incomplete Part 4 seed
+attempt. These are not the required full 110-run final scores, and they
+do not measure the subsequent robustness revision.}
+\label{tab:part4-incomplete-diagnostic}
+\end{table}
+The data/readability increase and chart decrease describe these matched
+records only. In particular, the chart audit's implementation did not
+change; model judgments can still vary between evaluation calls.
+The six unresolved records prevent treating this subset as an unbiased
+estimate of complete performance.
+
+\paragraph{Complete seed evaluation of the selected final validator.}
+The author evaluated the exact selected compact source on all 110 seed
+records. Its source and full predictions are retained as
+\path{tests/diagnostics/solution_compact_f7ff9773.py} and
+\path{tests/diagnostics/part4_compact_seed_f7ff9773.json}.
+The required \path{output/final_seed_predictions.json} is byte-identical
+to that complete prediction snapshot.
+The source has the \texttt{f7ff9773} hash reported above, and the snapshot
+contains exactly the seed IDs with valid prediction objects. The values
+in Table~\ref{tab:part4-compact-full} were checked read-only with the
+official scorer function and then confirmed by the author's final
+\texttt{workflow score} command. Restoring the exact same source
+preserves this complete experiment rather than mixing implementations
+or filling missing predictions by hand.
+Execution uses all 110 records; the 12 terminal reference execution
+failures are excluded from the other families, leaving 98 each.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+Family & Part 2 MCC & Final seed MCC & TP & TN & FP & FN \\
+\midrule
+\texttt{execution\_failure} & $1.0000$ & $1.0000$ & 12 & 98 & 0 & 0 \\
+\texttt{wrong\_data} & $-0.1445$ & $0.1802$ & 23 & 18 & 55 & 2 \\
+\texttt{wrong\_chart} & $0.3512$ & $0.3849$ & 41 & 23 & 4 & 30 \\
+\texttt{hard\_to\_read} & $-0.2424$ & $0.2197$ & 15 & 48 & 11 & 24 \\
+\midrule
+Macro-MCC & $0.2411$ & $0.4462$ & & & & \\
+\bottomrule
+\end{tabular}
+\caption{Complete seed evaluation of the selected final compact-data
+validator. Confusion counts are for that implementation; the baseline
+seed macro-MCC was $0.0268$.}
+\label{tab:part4-compact-full}
+\end{table}
+
+Aggregate improvement does not imply that the observed data false-alarm
+problem was solved. Data false positives increased from 15 in Part 2 to
+55, while false negatives decreased from 23 to 2; the compact version
+became much more positive on that family. Its $0.1802$ MCC therefore
+cannot be used as evidence of improved data precision. These full-set
+results motivated the further three-gate experiment described below,
+which was subsequently rejected rather than silently presented as final.
+The before/after chart scores also vary although that branch's code is
+unchanged, so their difference is not attributable to a chart-audit
+implementation change. The authored comparison below uses the original
+15 runs and unchanged reference labels, not regenerated runs or revised
+labels selected to favor the final validator.
+
+The standard end-to-end reproduction commands for the selected source are:
+\begin{verbatim}
+uv run python -m validator.runner \
+  --artifacts artifacts \
+  --out output/final_seed_predictions.json
+uv run python -m validator.runner \
+  --artifacts runs \
+  --out output/authored_predictions.json
+uv run python -m workflow score \
+  --labels seed_labels.json \
+  --predictions output/final_seed_predictions.json
+uv run python -m workflow score \
+  --predictions output/authored_predictions.json
+\end{verbatim}
+The seed evaluation was retained under the exact restored source;
+the authored evaluation then used that same source, and the author ran
+both final scoring commands. No mixed-source prediction file was assembled.
+
+\paragraph{Complete final authored evaluation.}
+The final \path{output/authored_predictions.json} contains exactly one
+valid prediction for every one of the 15 authored run IDs, with no
+missing or duplicate records. Its SHA-256 is:
+\begin{quote}
+\small
+\path{0e39fe0f5255acf6de65c023b8fc44b125b61cbe192b802c4112653dc41ece49}
+\end{quote}
+The unchanged \texttt{f7ff9773} final source is the same one used for
+the complete seed evaluation. Before-change authored predictions are
+the preserved \path{output/pre_iteration_authored_predictions.json},
+not regenerated answers from the final code.
+Table~\ref{tab:part4-authored-final} reproduces the author's official
+score output and gives the separate authored before/after comparison.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lrrrrrrr}
+\toprule
+Family & Before MCC & Final MCC & TP & TN & FP & FN & $+/-$ \\
+\midrule
+\texttt{execution\_failure} & $1.0000$ & $1.0000$ & 4 & 11 & 0 & 0 & 4/11 \\
+\texttt{wrong\_data} & $0.0000$ & $0.0000$ & 0 & 7 & 4 & 0 & 0/11 \\
+\texttt{wrong\_chart} & $0.0000$ & $0.0000$ & 0 & 10 & 0 & 1 & 1/10 \\
+\texttt{hard\_to\_read} & $-0.1491$ & $1.0000$ & 1 & 10 & 0 & 0 & 1/10 \\
+\midrule
+Macro-MCC & $0.2127$ & $0.5000$ & & & & & \\
+\bottomrule
+\end{tabular}
+\caption{Final authored performance against the unchanged, human-confirmed
+15-run reference labels. Counts and $+/-$ support are for the final
+validator. Execution is eligible on 15 records; the other families are
+eligible on 11 after excluding four terminal reference execution failures.}
+\label{tab:part4-authored-final}
+\end{table}
+
+The data family still has no positive reference support, so its MCC is
+zero by convention before and after; this cannot establish data-error
+recall. Nevertheless its false-positive count decreases from five to
+four. Three old data false alarms disappear, two persist, and two new
+ones appear, as detailed below. Chart design still predicts no positive
+cases and misses the single reference positive, so its supported-class
+MCC remains zero. Readability changes from TP/TN/FP/FN $0/8/2/1$ to
+$1/10/0/0$, removing two false alarms and detecting the one positive.
+This produces the authored macro-MCC increase from $0.2127$ to $0.5000$.
+The perfect readability score has only one positive example and does
+not certify general readability accuracy or explanation quality.
 
 \subsection{Qualitative Analysis of Self-Authored Tasks}
-\emph{Pending case-based analysis of improvements and regressions,
-including at least one FP and one FN with trajectory evidence and a
-hypothesis for the error.}
+
+\paragraph{Observed improvements and remaining data regressions.}
+The final validator removes the pre-iteration data false positives on
+\path{panel_unit_labels__ministral},
+\path{semantic_unit_labels__ministral}, and
+\path{semantic_unit_labels__qwen}.
+The actual counts, semantic unit labels, converted times, and requested
+data points in those figures are correct. The two persistent data false
+positives are \path{filtered_net_revenue__ministral} and
+\path{pooled_success_rates__ministral}; their final evidence now makes
+incorrect numerical claims rather than merely repeating the earlier
+label/style complaints. The new data false positives are
+\path{filtered_net_revenue__glm} and
+\path{shared_axis_scope__ministral}.
+Thus lower total FP count does not mean that every data judgment or
+the proposed family-separation mechanism succeeded.
+
+\paragraph{Specific false positive: invented expected arithmetic.}
+For \path{filtered_net_revenue__ministral}, the final explanation says
+\texttt{Expected: 165. Observed: 145} and attributes the expected value
+to gross $120+60$ and refunds $20+15$.
+Those very numbers give $(120-20)+(60-15)=145$, not 165.
+The final successful script was written in trajectory message index 8
+and executed at index 10 (zero-based indexing). Its exact calculation
+and aggregation lines are:
+\begin{quote}
+\small\ttfamily\raggedright
+\noindent\detokenize{completed_orders.loc[:, 'net_revenue'] = completed_orders['gross'] - completed_orders['refund']}\par
+\noindent\detokenize{net_revenue_by_region = completed_orders.groupby('region')['net_revenue'].sum()}
+\end{quote}
+The script filters exactly completed rows and reindexes all four regions;
+the delivered North bar is correctly annotated 145. This is a definite
+final \texttt{wrong\_data} false positive, supported by independent
+arithmetic, task data, the executed script, and image. A plausible cause
+is model arithmetic hallucination despite the structured evidence
+format; the parser validates fields and literal consistency, not sums.
+It cannot distinguish a plausible-looking expected value from a correct
+one. The same limitation is visible in
+\path{pooled_success_rates__ministral}: its final explanation calls
+March's correct $66.0\%$ wrong and asserts $60.0\%$ instead.
+The actual pooled calculation is
+$100(27+6)/(30+20)=66.0\%$.
+The executed script at message index 4 contains:
+\begin{quote}
+\small
+\begin{verbatim}
+lambda x: 100 * x['successes'].sum() / x['attempts'].sum()
+\end{verbatim}
+\end{quote}
+Neither final allegation is justified by the plotted data.
+
+\paragraph{New false positive: a zero-height category is not absent.}
+For \path{filtered_net_revenue__glm}, final evidence says South is
+missing and therefore also alleges wrong order/selection.
+The final script at message index 6 explicitly includes the category:
+\begin{quote}
+\small
+\begin{verbatim}
+regions = ['North', 'South', 'East', 'West']
+net_revenue = {region: 0 for region in regions}
+\end{verbatim}
+\end{quote}
+It passes all four resulting values to \texttt{ax.bar}; the saved image
+has the South tick and a zero annotation. A zero-height bar has no
+positive-area rectangle to see, but its category is represented exactly
+as requested. The likely weakness is confusing visually absent area
+with absent data and failing to reconcile pixels with executed values.
+That is a hypothesis about the judgment, not a logged internal cause.
+
+\paragraph{Specific false negative: shared-label placement still missed.}
+\path{shared_axis_scope__ministral} remains the authored
+\texttt{wrong\_chart} false negative. The task requires the figure-level
+x-label beneath the pair of panels and the y-label alongside the pair.
+The repaired final script at trajectory message index 10, executed at
+index 12, contains these exact lines:
+\begin{quote}
+\small
+\begin{verbatim}
+fig.text(0.5, 0.04, 'Elapsed time (s)', ha='center')
+fig.text(0.04, 0.5, 'Amplitude (V)', va='center', rotation='vertical')
+plt.tight_layout()
+\end{verbatim}
+\end{quote}
+The source lines above omit only their trailing comments.
+In the final pixels (Figure~\ref{fig:authored-shared-min}), the x-label
+is inside the lower plotting area, above its bottom spine, rather than
+below the panel pair. The shared y-label also overlaps the left ticks.
+The final validator returns no \texttt{wrong\_chart} despite the location
+violation. A plausible explanation is accepting the existence of
+\texttt{fig.text} without checking the label's required position relative
+to the saved panels, or weak visual localization. Intermediate checklist
+and audit responses are not preserved in the prediction file, so no
+particular internal cause is asserted as proven.
+
+That run also becomes a new data false positive: the explanation objects
+to missing per-panel labels, although the task explicitly requires
+shared figure-level labels and forbids separate per-panel labels.
+Its two numerical series are correct. This is an out-of-family
+data allegation and a failure to preserve task scope, not evidence
+that the plotted sensor data is wrong.
+
+\paragraph{Readability improves at family level, not fully in evidence.}
+The former readability false positives on
+\path{pooled_success_rates__ministral} and
+\path{semantic_unit_labels__qwen} disappear.
+The shared-axis Ministral run is now a readability true positive, which
+accounts for the final family's TP=1 and perfect MCC on this small set.
+However, its explanation alleges that the x-label is cut off at the
+image's right edge. The full x-label is actually visible near the bottom
+center; the actual readability defect is the shared y-label's left-side
+tick overlap. The misplaced shared x-label is a separate chart-design
+violation, not partially clipped text. Therefore the correct family-level
+prediction does not show that the new localization policy correctly
+identified the true overlap mechanism. Its stated clipping evidence
+is not supported by the saved image. This distinction matters because
+the assignment assesses explanatory evidence separately from MCC.
+
+\paragraph{Interpretation and generalization limits.}
+The final authored results improve macro-MCC and readability
+classification, but leave the chart-design miss and four data false
+alarms. Seed macro-MCC also improves to $0.4462$, while its data false
+positives rise from 15 to 55. The structured checks are therefore not
+a general guarantee against unsupported positive judgments.
+These are observed comparisons on fixed runs and labels, not controlled
+ablations establishing which prompt, budget, reinspection, or context
+change caused each difference. Same-model variation can affect even
+unchanged branches. The small authored distribution has no positive
+data reference cases and only one positive case each for chart design
+and readability; it cannot estimate performance on the private task
+distribution. No run-ID exceptions or reference-label lookups were added
+to obtain these outcomes.
 
 \subsection{Further Changes}
-\emph{Pending completion of the required experiments. Any further changes
-will be reported with their motivation and measured qualitative and
-quantitative effects; none are claimed in this draft.}
+The first robustness revision added length-triggered adaptive repair,
+targeted contradiction/finding repair, and stage-specific diagnostics.
+Its measured six-record probe completed four records but still exposed
+two operational failures and a colormap family leak. The compact revision
+adds compact data output, stronger category boundaries, provisional
+uncertainty for same-value claims, and explicit withholding of semantic
+data allegations that remain unconfirmed after one review. The last
+policy carries a false-negative risk. Neither revision modifies the five original
+tasks, reference labels, or execution/design branches. Their motivations
+are observed completion and evidence failures, not a desired answer for
+a particular public run. The compact revision then completed all 110 seed
+records with macro-MCC $0.4462$, but its 55 data false positives motivated
+the additional data-only support-review experiment below.
+
+\paragraph{Rejected three-gate support-review experiment.}
+This experimental source, archived separately as
+\path{tests/diagnostics/solution_proof_42353174.py}, had SHA-256:
+\begin{quote}
+\small
+\path{423531745b3603b604328c4059fdded1ef3cd2f311b004bcf346058c5cc7627b}
+\end{quote}
+Its historical offline suite passed 247 tests, including 24 new
+support-review regressions. These extra tests are archived in
+\path{tests/diagnostics/proof_revision_tests.py} against the experimental
+source rather than included in the restored validator's active 223-test suite.
+The experimental review replaced, rather than added to, the existing
+confirmation call. It reviewed only initially failed/uncertain data
+modes and asked for counterevidence and a concrete comparison before
+rating three gates: task support, an actual data difference, and support
+from final executed data or unambiguous pixels. Each gate was a
+same-model \texttt{supported}/\texttt{unsupported}/\texttt{uncertain}
+judgment, not an independent vote or deterministic semantic proof.
+All three had to be supported with a bounded finding to retain the
+allegation; rejected or uncertain claims required null findings.
+Initial pass modes were retained, and no hard keyword/code-quotation
+veto was used. Normal call counts, token budgets, and retry bounds were
+unchanged. The motivation was greater precision, with a known recall risk.
+
+The author tested that source on eight seed cases: 009, 021, 051, 077,
+081, 117, 164, and 177. Its saved
+\path{tests/diagnostics/part4_proof_probe_predictions.json} contains
+only six completed predictions; 021 and 164 remained missing after
+runner retries. For 021, terminal errors identified a nonnull finding
+on an unsupported/uncertain review. For 164, an all-supported review
+did not supply the required exact four-field finding. The raw failed
+completions were not stored, so the latter cannot be narrowed to a null
+finding versus incorrect/missing fields. Neither missing evaluation is
+counted as a clean prediction or a new reference execution failure.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lrr}
+\toprule
+Metric & Selected compact source & Rejected support review \\
+\midrule
+\texttt{execution\_failure} & $0.0000$ & $0.0000$ \\
+\texttt{wrong\_data} & $-0.4472$ & $-0.3333$ \\
+\texttt{wrong\_chart} & $0.6325$ & $0.6325$ \\
+\texttt{hard\_to\_read} & $0.0000$ & $0.0000$ \\
+Macro-MCC & $0.0463$ & $0.0748$ \\
+\bottomrule
+\end{tabular}
+\caption{Offline diagnostic comparison on only the six common completed
+probe IDs (009, 051, 077, 081, 117, 177). Execution lacks positive
+reference support (0/6), so its MCC is zero by convention. The two missing
+support-review evaluations are excluded from both columns; this selected
+subset is not either version's full seed score.}
+\label{tab:part4-rejected-proof-probe}
+\end{table}
+
+On these six common records, data TP/TN/FP/FN changed from
+2/0/3/1 to 1/1/2/2; other families' binary predictions were unchanged.
+One false alarm disappeared, but a true positive was also lost, adding
+a false negative. The small subset's data MCC and macro-MCC increased
+slightly despite that recall loss; this is not evidence of a complete-set
+improvement or regression. Case evidence remains problematic:
+009 reports a data error while its own explanation says all requested
+versions are present; 051 puts a title-capitalization complaint in the
+data family; 081 and 117 miss true data errors. The positive on 077 does
+not establish evidence quality: it alleges missing/incorrect series even
+though both series are present, while the reference defect is swapped
+final values in the last two positions.
+
+I therefore rejected this experiment and restored the exact
+\texttt{f7ff9773} compact source. The reason is its complete 110-run
+evaluation and successful six-record completion probe, contrasted with
+two unresolved operational failures and the mixed sampled recall/evidence
+outcome of the experimental review. This is not a claim that a full-set
+macro-MCC for the rejected source was measured, or that the selected
+validator has no remaining defects. Restoring the exact source also
+retains the already-complete seed experiment without rerunning or
+mixing implementations. The completed final authored evaluation used
+the same restored source. No further validator changes or additional
+tasks were added after selecting this version; all additional experiments
+and the rejected revision are reported above.
 
 \end{document}
