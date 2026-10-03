@@ -41,7 +41,17 @@ from `figure.png`.
    {"elapsed_minutes": [0, 0, 0, 0, 0, 0], "temperature_c": [0, 0, 0, 0, 0, 0]}
    ```
 
-Do not modify `warmup.csv`. Keep the plotting script and its outputs
+Artifact and replay checks: `plot.py`, both outputs, and `warmup.csv` must be
+regular files, not symbolic links. `figure.png` must be a valid PNG at least
+100 pixels wide and 100 pixels high, larger than 1,000 bytes, and containing
+more than four distinct RGB colors. These are basic artifact-validity guards,
+not a substitute for the readability requirements above. On a clean replay
+from a copied workspace, `python plot.py` must exit successfully within
+60 seconds, reproduce `figure.png` byte-for-byte, and reproduce an equal
+decoded `plotted_values.json` object. Use finite JSON numbers and unique
+object keys.
+
+Do not modify `warmup.csv`, including during replay. Keep the plotting script and its outputs
 deterministic: no random styling, timestamps, or other run-dependent content.
 Equivalent axis-label wording remains acceptable as described above.
 

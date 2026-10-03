@@ -5,6 +5,7 @@ are handled by the shared fixture; rendered font size is not graded here.
 """
 
 import re
+import unicodedata
 
 from verifier_support import (
     assert_numbers,
@@ -39,8 +40,9 @@ def test_one_line_with_circular_markers_uses_all_observations(submission):
 
 def test_separate_axis_labels_express_the_required_quantities_and_units(submission):
     ax = main_axes(submission["manifest"], 1)[0]
-    xlabel = ax["xlabel"].casefold()
-    ylabel = ax["ylabel"].casefold()
+    # For example, the standard DEGREE CELSIUS symbol "℃" normalizes to "°C".
+    xlabel = unicodedata.normalize("NFKC", ax["xlabel"]).casefold()
+    ylabel = unicodedata.normalize("NFKC", ax["ylabel"]).casefold()
     assert re.search(r"\b(?:time|elapsed|duration)\b", xlabel), (
         "the separate x-axis label must express elapsed time"
     )

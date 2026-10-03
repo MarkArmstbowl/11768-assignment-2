@@ -1355,6 +1355,11 @@ These trajectories demonstrate failures under the fixed agent configuration;
 they do not establish an internal model cause.
 The successful \path{semantic_unit_labels__qwen} example also prevents the
 overgeneralization that Qwen fails every task.
+Part 3 requires running each fixed agent on every task and labeling the
+observed outcome; it does not require every visualization-agent run to
+succeed. These four failures therefore remain part of the evaluation.
+The separate requirement that every packaged Harbor task score $1.0$
+applies to its reference solution, not to all three fixed agents.
 
 \paragraph{A delivered figure with two distinct errors.}
 \path{shared_axis_scope__ministral} plots all supplied sensor values in the
@@ -1403,6 +1408,10 @@ The zero annotation in \path{filtered_net_revenue__glm} sits close above
 the South tick name. The author reviewed the enlarged image and judged
 both texts still distinguishable and readable. It is accepted as mild
 crowding, not labeled \texttt{hard\_to\_read}.
+In \path{pooled_success_rates__glm}, the blue line lightly contacts the
+February annotation's percent sign, but the value $27.5\%$ remains legible;
+this borderline contact is accepted as mild crowding, with the label
+unchanged.
 The temperature task expressly permits
 \texttt{Temperature (C)} as well as \texttt{Temperature (degrees Celsius)};
 different permitted unit wording is not an error.
@@ -1688,9 +1697,43 @@ replay of the plotting script, then compares the replayed PNG bytes and
 sidecar with the delivered files. The original five task prompts and CSVs
 are preserved.
 
+\paragraph{Verifier-contract audit.}
+A subsequent audit tightened agreement between the Harbor instructions and
+their deterministic tests without changing the original tasks, generated
+runs, human-confirmed labels, or pre-iteration validator. The added
+\texttt{Required outputs} blocks now state the existing regular-file,
+PNG-size/color, 60-second replay, and exact artifact-reproduction safeguards
+explicitly. These basic validity guards do not certify visual readability.
+The test implementation was also made less restrictive where the task
+leaves a choice open: axis scales are not forced to be linear unless the
+task requires it; correct bars may be created through multiple
+\texttt{BarContainer} objects; a decorative zero-baseline line is allowed
+without admitting an additional data series; and semantic unit labels use
+Unicode NFKC normalization to recognize equivalent Celsius notation.
+These are task-specific verifier robustness changes, not an additional
+iteration of the general-purpose VLM validator; they do not change the
+pre-iteration MCC scores. After the audit, all five references, both
+mutants, and the do-nothing control were re-run in fresh Harbor jobs.
+The rewards below were reconfirmed against this revised verifier, rather
+than inferred from the earlier version's results.
+
+\paragraph{Offline contract regression tests.}
+\path{tests/test_harbor_verifier_contract.py} adds 20 deterministic tests
+that capture actual Matplotlib artists in memory and invoke the packaged
+checks. They exercise the newly accepted implementations and negative
+controls for incorrect values, missing or extra bars, horizontal bars,
+nonzero baselines, additional data series, wrong units, and mismatched
+shared-axis scales. All 20 passed, and the full local suite passed all
+122 tests. These tests do not call a model or replace the Docker replay
+experiments. The suite can be reproduced from the release root with:
+\begin{verbatim}
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest \
+  discover -s tests -p 'test_*.py'
+\end{verbatim}
+
 Harbor 0.23.0 accepted each of the five packages in its preflight.
 Each was then run once against its own reference solution using
-\texttt{-a oracle}. The final-version runs had one trial each, no
+\texttt{-a oracle}. The post-audit runs had one trial each, no
 exceptions, and the rewards shown in Table~\ref{tab:authored-harbor}.
 The recommended \texttt{-a nop} check on
 \path{filtered_net_revenue} scored $0.0$ with zero exceptions.
@@ -1711,7 +1754,7 @@ Authored task & Oracle reward & Exceptions \\
 \path{shared_axis_scope} & $1.0$ & 0 \\
 \bottomrule
 \end{tabular}
-\caption{Five measured authored-task oracle runs. These are separate
+\caption{Five measured post-audit authored-task oracle runs. These are separate
 from the staff worked-example runs in Table~\ref{tab:harbor-worked-example}.}
 \label{tab:authored-harbor}
 \end{table}
@@ -1751,7 +1794,7 @@ for id in filtered_net_revenue panel_unit_labels \
           shared_axis_scope; do
   uv run python harbor/preflight.py "harbor/tasks/$id"
   uv run harbor run -p "harbor/tasks/$id" \
-    -a oracle --job-name "$id-oracle-final"
+    -a oracle --job-name "$id-oracle-contract-audit"
 done
 
 for mutant in ignore_status illegible; do
@@ -1760,13 +1803,20 @@ for mutant in ignore_status illegible; do
   cp "harbor/tasks/filtered_net_revenue/mutants/$mutant/solve.sh" \
     "$trial_dir/solution/solve.sh"
   uv run harbor run -p "$trial_dir" -a oracle \
-    --job-name "filtered_net_revenue-$mutant-final"
+    --job-name "filtered_net_revenue-$mutant-contract-audit"
 done
+
+uv run harbor run -p harbor/tasks/filtered_net_revenue \
+  -a nop --job-name filtered_net_revenue-nop-contract-audit
 \end{verbatim}
-The observed jobs are retained locally under
-\path{jobs/<task_id>-oracle-final/},
-\path{jobs/filtered_net_revenue-ignore_status-final/}, and
-\path{jobs/filtered_net_revenue-illegible-final/}. Their trial
+The observed jobs are retained locally under \path{jobs/}, in:
+\begin{verbatim}
+<task_id>-oracle-contract-audit/
+filtered_net_revenue-ignore_status-contract-audit/
+filtered_net_revenue-illegible-contract-audit/
+filtered_net_revenue-nop-contract-audit/
+\end{verbatim}
+Their trial
 directories contain \path{verifier/reward.txt} and
 \path{verifier/pytest.log}. The job directories are development logs
 and are not required submission artifacts.

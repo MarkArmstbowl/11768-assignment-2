@@ -213,19 +213,56 @@ def main_axes(manifest, count):
     axes = manifest["axes"]
     assert len(axes) == count and all(ax["role"] == "main" for ax in axes)
     assert all(ax["projection"] == "rectilinear" for ax in axes)
-    assert all(ax["xscale"] == "linear" and ax["yscale"] == "linear" for ax in axes)
+    # Scale restrictions belong to the task-specific checks, not to all tasks.
     return axes
 
 
 def bar_series(ax):
+    """Read vertical bars by position, independently of the number of bar calls."""
     bars = [item for item in ax["containers"] if item["type"] == "bar"]
-    assert len(bars) == 1, "expected a single bar series"
-    assert bars[0]["orientation"] == "vertical", "bars must be vertical"
-    assert not ax["lines"] and not ax["images"] and not ax["collections"], (
+    assert bars, "expected a vertical bar series"
+    assert all(item["orientation"] == "vertical" for item in bars), (
+        "bars must be vertical"
+    )
+    assert not ax["images"] and not ax["collections"], (
         "unexpected additional plotted series"
     )
-    assert_numbers(bars[0]["baselines"], [0] * len(bars[0]["values"]))
-    return bars[0]
+    # A zero guide is a normal way to show the baseline, not an extra data series.
+    # Do not broadly ignore lines: nonzero guides or lines with markers still fail.
+    for line in ax["lines"]:
+        assert (
+            line["type"] == "line"
+            and len(line["y"]) >= 2
+            and all(math.isclose(_number(y), 0, abs_tol=1e-8) for y in line["y"])
+            and line["marker"].casefold() in {"", "none", " "}
+            and line["linestyle"].casefold() not in {"", "none", " "}
+        ), "unexpected additional plotted series"
+
+    observations = []
+    for item in bars:
+        values, offsets, baselines = (
+            item["values"], item["offsets"], item["baselines"]
+        )
+        assert all(isinstance(series, list) for series in (values, offsets, baselines))
+        assert len(values) == len(offsets) == len(baselines), "invalid bar capture"
+        observations.extend(
+            (_number(offset), _number(value), _number(baseline))
+            for offset, value, baseline in zip(offsets, values, baselines, strict=True)
+        )
+    observations.sort(key=lambda item: item[0])
+    assert observations, "expected nonempty vertical bars"
+    assert all(a[0] < b[0] for a, b in zip(observations, observations[1:])), (
+        "each category must have a separate bar position"
+    )
+    result = {
+        "type": "bar",
+        "orientation": "vertical",
+        "offsets": [item[0] for item in observations],
+        "values": [item[1] for item in observations],
+        "baselines": [item[2] for item in observations],
+    }
+    assert_numbers(result["baselines"], [0] * len(result["values"]))
+    return result
 
 
 def line_series(ax):

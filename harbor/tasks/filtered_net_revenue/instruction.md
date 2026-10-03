@@ -39,7 +39,17 @@ graded from `figure.png`.
    passed to the plotting function. An all-zero schema example is
    `{"North": 0, "South": 0, "East": 0, "West": 0}`.
 
-Do not modify `orders.csv`.
+Artifact and replay checks: `plot.py`, both outputs, and `orders.csv` must be
+regular files, not symbolic links. `figure.png` must be a valid PNG at least
+100 pixels wide and 100 pixels high, larger than 1,000 bytes, and containing
+more than four distinct RGB colors. These are basic artifact-validity guards,
+not a substitute for the readability requirements above. On a clean replay
+from a copied workspace, `python plot.py` must exit successfully within
+60 seconds, reproduce `figure.png` byte-for-byte, and reproduce an equal
+decoded `plotted_values.json` object. Use finite JSON numbers and unique
+object keys.
+
+Do not modify `orders.csv`, including during replay.
 
 Only the libraries already installed are available and there is no network
 access; everything you need is in the image.
