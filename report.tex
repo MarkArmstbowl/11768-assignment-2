@@ -19,11 +19,15 @@
 \begin{quote}
 \small
 \textbf{Working-draft status.}
-Part 1 below records the completed baseline experiment and two evidence-backed
-error analyses. The proposed changes have not yet been implemented or evaluated.
-Parts 2--4 are explicitly reserved for subsequent experiments; this is not yet
-the complete report for submission.
+Parts 1--2 below record the completed baseline experiment, two evidence-backed
+error analyses, both proposed implementations, and the full seed-set comparison.
+Parts 3--4 are reserved for subsequent experiments.
+This is not yet the complete report for submission.
 \end{quote}
+
+The four reproduced seed figures are unchanged copies in
+\path{report_assets/}. This directory must accompany the source to recompile
+the report; the PDF embeds the images.
 
 \section{Part 1: Examine Seed Agent Runs}
 
@@ -186,7 +190,7 @@ deliver a plot.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.97\linewidth]{artifacts/022/figure.png}
+\includegraphics[width=0.97\linewidth]{report_assets/seed_022.png}
 \caption{The supplied final artifact for run 022. The separate linear and
 logarithmic panels are present; the human label is acceptable.}
 \label{fig:run-022}
@@ -222,7 +226,7 @@ For this run, the baseline incurs an execution FP and a chart FN.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.68\linewidth]{artifacts/079/figure.png}
+\includegraphics[width=0.68\linewidth]{report_assets/seed_079.png}
 \caption{Run 079 delivered a readable PNG, but the contours lie on a fixed
 z-plane. This supports the provided \texttt{wrong\_chart} label, not the
 baseline's \texttt{execution\_failure} label.}
@@ -287,7 +291,7 @@ violation is absence of a title, not failure to use an invented exact phrase.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.70\linewidth]{artifacts/021/figure.png}
+\includegraphics[width=0.70\linewidth]{report_assets/seed_021.png}
 \caption{Run 021 has service-name tick labels and a y-axis title, but no
 x-axis title despite the explicit requirement to label both axes.}
 \label{fig:run-021}
@@ -315,7 +319,7 @@ script has regenerated the output.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.97\linewidth]{artifacts/202/figure.png}
+\includegraphics[width=0.97\linewidth]{report_assets/seed_202.png}
 \caption{Run 202 retains the x-axis labels, but the specified
 \texttt{Measured values} y-axis labels and horizontal grids are absent
 from both final panels.}
@@ -340,9 +344,10 @@ explanation for either run.
 \subsection{Proposed Validator Changes}
 \label{sec:proposals}
 
-The following are \emph{proposals} motivated by the two observed error
-types. They have not yet been implemented, and no improved scores are
-claimed in Part 1.
+The following changes were \emph{proposed} after the baseline analysis.
+This section records their motivation before implementation; the incremental
+implementation and validation status is recorded separately in Part 2.
+No improved-validator scores are claimed in Part 1.
 
 \paragraph{Change 1: artifact-grounded execution decisions with explicit
 failure polarity.}
@@ -411,7 +416,7 @@ This proposal specifically targets the axis-label false negatives in
 requested design elements.
 
 \paragraph{Constraints and validation plan.}
-Both changes will be implemented only in the student validator while
+Both changes are restricted to the student validator while
 preserving \texttt{validate(run)} and the required list-of-errors output
 schema. The internal decision/checklist protocol does not replace the
 external \texttt{family}/\texttt{evidence} contract.
@@ -424,9 +429,9 @@ comparison point.
 
 Part 2 will test whether the changes reduce the targeted errors on the
 four case-study runs and on the complete seed set. It must also check
-for regressions: execution false negatives must not increase merely
-because the new check is too permissive, and the checklist must not
-invent requirements or reject permitted shared labels.
+for regressions: check and report whether execution false negatives increase
+because the new check is too permissive, or whether the checklist invents
+requirements or rejects permitted shared labels.
 All four family MCCs and macro-MCC will be compared with
 Table~\ref{tab:baseline}, alongside at least one remaining FP and FN.
 Structured output can still contain an incorrect semantic judgment,
@@ -438,16 +443,596 @@ demonstrated solution to the private grading set.
 \section{Part 2: Improve Your Validator}
 
 \subsection{Implemented Changes}
-\emph{Pending the Part 2 implementation. No validator changes have been
-implemented in the experiments reported above.}
+
+\paragraph{Completed Part 2 scope.}
+Both proposed changes have been implemented in \path{validator/solution.py}.
+The original \path{validator/baseline.py} and
+\path{output/baseline_predictions.json} remain unchanged.
+The execution gate and chart-design check are replaced; the data and
+readability checks retain the baseline procedures. The implementation is
+runnable and has been evaluated on all 110 released seed runs. The incremental
+tests below document development checks; the full results in
+Section~\ref{sec:part2-performance} are the primary performance comparison.
+
+\paragraph{Change 1: deterministic artifact checks.}
+The execution gate first reads the actual delivered image. No recorded image
+path, a missing file, a directory in place of the file, an invalid PNG format,
+or a corrupt PNG yields a terminal \texttt{execution\_failure} with specific
+artifact evidence. A present image must pass both Pillow's structural
+\texttt{verify()} check and a fresh open with \texttt{load()} to decode pixels.
+The implementation does not search for an alternative output path or execute
+the agent's plotting code to repair the delivered artifact.
+Permission and file-reading environment errors propagate to the runner rather
+than becoming an agent-failure label. Thus a successful shell command or an
+agent-written completion claim cannot compensate for a missing required output.
+
+\paragraph{Change 1: model-based delivery judgment and strict parsing.}
+For a decodable PNG, the same fixed Qwen3-VL model receives the task, input-file
+contents, full serialized trajectory including tool calls and tool results,
+and the image. The instructions separate final delivery from data correctness,
+chart design, and readability, and explicitly disregard repaired intermediate
+exceptions as evidence of final failure. A blank-looking image alone is not
+enough to diagnose execution failure: invisible plotted elements may instead
+be a readability problem. For a positive judgment about a decodable artifact,
+the prompt requires image and trajectory evidence that it is only a placeholder
+or an unrelated non-figure artifact; this requirement is not a programmatic
+proof of the model's evidence.
+
+The internal response has exactly three fields:
+\texttt{execution\_failure}, \texttt{artifact\_status}, and \texttt{evidence}.
+Only a real JSON Boolean is accepted. The status must be
+\texttt{rendered\_figure} when failure is false, or
+\texttt{no\_figure\_content} when failure is true.
+Unknown or missing fields, duplicate keys, blank evidence, malformed JSON,
+and responses truncated at the output limit are rejected.
+A single enclosing JSON code fence is tolerated, but explanatory text outside
+the JSON is not. The public return type remains \texttt{list[Error]}, with the
+unchanged \texttt{family}/\texttt{evidence} schema.
+
+There are at most two decision attempts for a decoded artifact, excluding
+transport retries and context-overflow handling. A valid false decision
+permits the remaining three family checks. A provisional true decision is
+rechecked against the category boundary and must be confirmed before returning
+an execution error. If the attempt budget expires without a reliable decision,
+the function raises a validator-side error for the runner, rather than
+guessing an agent label or returning an empty error list.
+The parser checks consistency between the structured fields; it cannot prove
+that all natural-language evidence is semantically consistent or that the
+model's judgment is correct. The second judgment is a targeted recheck, not an
+independent ground-truth oracle.
+
+\paragraph{Context handling and scope.}
+The model client retains temperature zero, and execution judgments allow
+512 output tokens. Full evidence is attempted first. Only a recognized context
+overflow triggers compaction using the server's reported context limit and
+tokenizer. The compacted text budget reserves half the context for the image
+and formatting and explicitly reserves the execution response budget.
+Input text may retain only its beginning and end. Trajectory compaction retains
+a chronological suffix of complete messages, normally considering up to the
+last 12, and preserves the last tool call/result group whose IDs can be linked.
+It does not retain a known tool result without its caller. If even the required
+final group cannot fit, the context error is surfaced.
+Earlier events, including some output-producing code, can still be omitted;
+this is not a guarantee that all relevant history survives.
+Omissions are disclosed to the judge and must not be interpreted as agent errors.
+If necessary, the existing baseline helper downscales the request image
+in memory; the supplied on-disk figure is never replaced.
+
+All decisions use only the current run. The submitted validator does not load
+human labels or branch on public run IDs. The selected IDs below belong only
+to the separate test harness. The Step 2.1 experiment below predates the
+separate design-audit implementation and concerns only the execution gate;
+its recorded \texttt{implementation\_sha256} identifies that earlier version,
+not the current two-change source.
+
+\paragraph{Incremental local verification.}
+The offline regression suite in \path{tests/test_solution_execution.py}
+contains 33 passing tests, with model and tokenizer responses mocked.
+It covers strict parsing, bounded rechecking, PNG validation, repaired
+exceptions, propagation of validator-side failures, terminal early return,
+and preservation of the nonterminal output schema. Context tests include
+oversized early history and a final tool group followed by completion messages;
+if only the completion message fits, the check must raise rather than silently
+drop the final known tool group.
+These are tests of program behavior, not evidence that the real judge always
+classifies synthetic blank or invisible charts correctly.
+
+The read-only artifact audit in \path{tests/check_execution_smoke.py} inspected
+all 110 released runs: 12 have no delivered \texttt{figure.png}, and 98 PNGs
+pass structural verification and full decoding.
+Comparison with the provided labels confirms that those 12 missing outputs
+are the 12 human-labeled execution failures. This comparison is performed for
+offline evaluation only; labels are not input to the validator.
+The audit does not measure the model-based gate's predictions on the 98 images
+and must not be interpreted as a full-validator MCC result.
+
+The local checks can be reproduced without model requests:
+\begin{verbatim}
+uv run python -m unittest discover -s tests \
+  -p test_solution_execution.py
+uv run python tests/check_execution_smoke.py
+\end{verbatim}
+
+\paragraph{Limited real-model smoke test.}
+The execution gate alone was then tested on six selected released runs.
+The saved diagnostic record is
+\path{tests/diagnostics/step2_1_execution_checks.json}; it explicitly identifies its scope
+as execution-only and stores the actual judge responses and token usage.
+This is not the full prediction file required for Part 2.
+The test can be reproduced with the existing validator endpoint:
+\begin{verbatim}
+uv run python tests/check_execution_smoke.py \
+  --live --run-ids 022 079 021 202 089 105
+\end{verbatim}
+The five runs with PNGs each obtained a valid false execution decision on the
+first model call. Run 089 was rejected locally for its missing required output,
+without a model call. The five completed judge calls used 43,734 total tokens
+as reported by the service, including 751 completion tokens.
+No context-overflow or response-repair path was needed in this selected test.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+Run & Human & Baseline & Step 2.1 & Model calls \\
+\midrule
+022 & No  & Yes & No  & 1 \\
+079 & No  & Yes & No  & 1 \\
+021 & No  & No  & No  & 1 \\
+202 & No  & No  & No  & 1 \\
+089 & Yes & No  & Yes & 0 \\
+105 & No  & Yes & No  & 1 \\
+\bottomrule
+\end{tabular}
+\caption{Execution-failure decisions only: Yes means this family is present,
+not that the task is successful. All six selected execution decisions agree
+with the human labels. These are targeted examples, not an unbiased performance
+estimate or a complete four-family evaluation.}
+\label{tab:execution-smoke}
+\end{table}
+
+The targeted execution false positives on 022 and 079 are absent in this
+smoke test. Run 105 adds another repaired-exception example: the baseline
+reports execution failure even though the final plot was delivered; the new
+gate permits further checks. Conversely, run 089 illustrates a corrected
+execution false negative. Its trajectory records successful plotting code
+that saves \texttt{plot.png}, but the required \texttt{figure.png} was not
+delivered. The new deterministic check diagnoses the actual missing output
+instead of adopting the completion claim.
+
+The smoke test also exposes a remaining limitation rather than proving all
+judge reasoning reliable. For 079, the model's internal false-decision
+explanation calls the chart a filled 3D tricontour, despite the flat contour
+projection discussed in Part 1. For 202, it incorrectly claims that the final
+chart has the required y-axis label and horizontal gridlines.
+Those details conflict with the supplied image and final plotting code.
+The delivery decisions are nevertheless correct: both runs have figures.
+Their internal explanations must not be reused as evidence that the design
+requirements pass. This motivates keeping the separate design audit in
+Change 2, rather than allowing a negative execution decision to certify
+the entire task. Passing the execution gate on 021 and 202 does not resolve
+their chart-design false negatives; Change 2 is tested separately below.
+
+\paragraph{Change 2: task-only, scoped requirement extraction.}
+The fixed judge first receives only the original task instructions and their
+numbered nonempty lines, not the candidate's image, trajectory, or completion
+claims. The policy instructs it to extract individually checkable, explicit
+requirements for chart type/projection, layout, axes,
+legend/colorbar/annotations, and style. Each item records a unique ID, kind,
+requirement, affected panel/axis scope, and source-line ID. The implementation
+restores that line's verbatim text as the item's source quotation.
+The parser rejects unknown source IDs, extra/missing fields, invalid kinds,
+duplicate requirement IDs, and empty/non-string fields. A response using a
+source quotation instead of an ID is also accepted only when it passes the
+original strict quotation checks; it cannot bypass grounding.
+This prevents successful ID-based responses from rewriting quotations, but
+does not prove that their interpretations are supported by those lines or
+that extraction is complete. An omitted requirement, wrongly inferred scope,
+or an unsplit compound item remains a possible source of false negatives:
+atomic splitting is requested in the policy, not proved by the parser.
+
+The extraction policy prohibits inventing unrequested labels, grids, legends,
+exact wording, or dimensions. It separates numerical correctness from design
+requirements. An axis label is not interchangeable with category tick names.
+Panel scope matters: a requirement for both panels cannot be satisfied by
+checking only one. An empty checklist is allowed for a task with no explicit
+design requirements; this too relies on the model's extraction judgment.
+
+\paragraph{Change 2: unprimed observation and final-artifact audit.}
+Before an audit, a separate call receives only the final image, without task
+text, expected labels, input contents, or agent claims. It describes visible
+panel positions, titles, separate axis labels versus tick labels, grids,
+annotations, and geometry. This is a fallible observation by the same fixed
+model, not a reference figure or an independent oracle. Its purpose is to
+reduce substitution of expected elements for observed ones.
+
+The audit then receives that observation, the checklist, original task, input contents, full
+serialized trajectory, and decoded final PNG. The policy makes visible final
+image evidence primary and uses the latest successfully executed
+output-producing code to corroborate metadata and ambiguities.
+Correct earlier code and agent success claims do not certify the final
+artifact. This directly addresses the overwritten-script pattern in 202.
+Equivalent implementations, including pyplot functions, helpers, and
+shared/global labels when allowed by the task, are accepted; the validator
+does not decide label absence by searching for one API name.
+
+Each checklist ID must appear exactly once in the audit with one of
+\texttt{pass}, \texttt{fail}, or \texttt{uncertain}, plus nonempty evidence.
+Missing, duplicate, or unknown IDs are rejected, not silently counted as
+passing. Only uncertain items receive one targeted recheck round.
+Confirmed failures are consolidated into one \texttt{wrong\_chart} error,
+whose evidence includes each violated requirement, scope, task quote, and
+final-state observation. If no failure is established but an item remains
+uncertain, the check raises a validator-side error instead of claiming success.
+When a confirmed failure already establishes this binary family, it remains
+reportable even if another requirement is unresolved; the unresolved item is
+not presented as a demonstrated violation.
+
+Both extraction and each audit allow at most two response-format attempts.
+Truncation, malformed JSON, invalid fields, and incomplete coverage trigger
+schema repair; exhausting the budget propagates an error.
+Transport and unavailable-context failures do not become agent labels.
+Extraction allows 3,072 output tokens, image-only observation 1,024,
+and audit 4,096. Observation also rejects empty/non-textual or truncated
+responses with a bounded retry; non-context service errors propagate.
+The audit's context fallback budgets the full task, checklist, stage policy,
+and actual response allowance, rather than reusing the execution check's
+512-token response reservation. The task and checklist are never excerpted.
+Trajectory/input omissions and possible in-memory image downscaling retain
+the limitations described above.
+
+To reduce persistent formatting failures observed during development,
+extraction and audit also request JSON-schema-constrained decoding through
+the existing fixed-model endpoint, following the
+\href{https://docs.vllm.ai/en/v0.15.0/features/structured_outputs/}
+{vLLM structured-output interface}.
+The extraction schema limits source IDs and kinds to their current-task
+allowed values. The audit schema allows only ID, status, and evidence,
+restricts IDs to the supplied checklist, and requires its number of entries.
+Local parsers still verify nonempty fields, unique IDs, and exact coverage.
+Format constraints do not prove correct interpretation, complete extraction,
+truthful visual evidence, or correct error-family attribution.
+No server deployment, model, runner, or external prediction schema was changed.
+
+Data correctness still uses the baseline's independent data-only question.
+The old combined data-and-chart helper is not called, preventing duplicate
+or contradictory chart judgments. Data and design errors can coexist.
+Readability remains a separate baseline check.
+For a delivered chart without repairs or uncertainty, this version normally
+makes six calls: execution, data, requirement extraction, image-only
+observation, design audit, and readability.
+The additional calls are a cost of explicit coverage, not evidence
+that the underlying fixed model is infallible.
+
+\paragraph{Change 2: offline regression tests.}
+The combined suite now has 91 passing tests: the 33 execution tests above
+and 58 design tests in \path{tests/test_solution_design.py}.
+Design tests cover grounded quotations, strict schemas and exact checklist
+coverage, bounded format repair, rejection of truncated answers, independent
+data/design labels, uncertain-item rechecking, and unresolved-error propagation.
+Mocked interface tests verify that extraction receives only task instructions,
+whereas audit receives exact final-image bytes, raw tool calls/results, and
+input contents. Context tests verify the design-specific policy and response
+budget, checklist preservation, non-context error propagation, and image
+downscaling without changing the on-disk figure.
+Additional tests verify task-line ID restoration, image-only observation
+isolation and bounded retries, JSON-schema request parameters, targeted
+subset schemas, and unchanged format constraints during context fallback.
+A mocked shared-label case checks control-flow compatibility with an
+allowed global label; it is not a real-model generalization result.
+
+\begin{verbatim}
+uv run python -m unittest discover -s tests \
+  -p 'test_solution_*.py'
+\end{verbatim}
+
+\paragraph{Targeted development checks and limitations.}
+The design-only harness \path{tests/check_design_smoke.py} was run on seven
+selected seed cases, not on the entire seed set. Its scope deliberately
+excludes execution, data, and readability classification.
+Early development checks exposed missed design requirements, rewritten source
+quotations, and audits that repeatedly copied extra checklist fields.
+These motivated source-line IDs and schema-constrained decoding.
+Such validator-side operational failures were not counted as negative labels.
+The superseded debug records are not used for the full-set results below.
+
+The final selected test is saved in
+\path{tests/diagnostics/step2_2_design_checks.json}.
+Its recorded source hash matches the tested implementation.
+It completed all seven cases using 21 model calls, with 94,815 service-reported
+total tokens, including 9,183 completion tokens.
+Each case used one extraction, one image-only observation, and one audit;
+no format repair, uncertainty recheck, or context fallback was needed in this
+final selected test. The command is:
+\begin{verbatim}
+uv run python tests/check_design_smoke.py \
+  --live --run-ids 021 202 022 105 079 097 196
+\end{verbatim}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+Run & Human wrong-chart & Baseline wrong-chart & Step 2.2 wrong-chart \\
+\midrule
+021 & Yes & No & Yes \\
+202 & Yes & No & Yes \\
+022 & No  & No & No  \\
+105 & No  & No & No  \\
+079 & Yes & No & No  \\
+097 & No  & No & No  \\
+196 & No  & No & No  \\
+\bottomrule
+\end{tabular}
+\caption{Design-family membership only on selected cases.
+Baseline 079 and 105 instead return execution errors; No in their
+design column does not imply overall task success.
+These targeted observations are not a full-validator MCC estimate.}
+\label{tab:design-smoke}
+\end{table}
+
+The final selected smoke-test labels recover the targeted design positives on
+021 and 202, and
+all four selected design-negative controls remain negative.
+The controls exercise acceptable linear/log labeling (022), no unrequested
+figure-size constraint (105), pyplot-based labels and a plotted maximum
+marker (097), and a task that requires a y-axis label but not an x-axis label
+or a grid (196). These examples do not establish hidden-set generalization.
+
+Critically, correct binary labels do not make every explanation correct.
+For 021 the new evidence correctly identifies the absent separate x-axis
+label, but it also wrongly insists that the valid label \texttt{Latency (ms)}
+must literally read \texttt{latency in milliseconds}. The task specifies the
+quantity and unit, not that exact string.
+For 202 the final audit flags the grid requirement, but hallucinates vertical
+gridlines: the supplied image has no gridlines. It also incorrectly passes
+the missing \texttt{Measured values} labels.
+Image-only observations themselves sometimes hallucinate elements, and the
+later audit can repeat those claims or prefer earlier correct code.
+These failures remain despite valid schemas and grounded source IDs.
+
+Run 079 remains a design false negative: the model accepts a flat contour
+projection on 3D axes as the requested filled 3D tricontour plot.
+The observation even describes both varying height and a single flat plane,
+illustrating unresolved semantic inconsistency. Consequently, this step
+supports limited improvement in family detection, not a claim that final
+code provenance, task interpretation, or image grounding is solved.
+The complete experiment below provides all four family scores and analyzes
+actual full-run false positives and false negatives. In particular, these
+selected smoke-test outcomes must not substitute for the full-run results.
 
 \subsection{Seed-Set Performance vs.\ Baseline}
-\emph{Pending evaluation of the modified validator on all seed runs.
-No modified-validator scores are available yet.}
+\label{sec:part2-performance}
+
+\paragraph{Experiment and coverage.}
+The two-change validator was run on the entire released seed set, using the
+same fixed model and the unchanged public runner and prediction schema.
+The saved \path{output/pre_iteration_seed_predictions.json} contains exactly
+110 predictions with 110 unique run IDs, matching the human-label IDs with no
+missing or additional runs. The official scorer validates the prediction
+schema. Each returned error has one of the four prescribed families and
+nonempty evidence. The reproduction commands are:
+\begin{verbatim}
+uv run python -m validator.runner \
+  --artifacts artifacts \
+  --out output/pre_iteration_seed_predictions.json
+
+uv run python -m workflow score \
+  --labels seed_labels.json \
+  --predictions output/pre_iteration_seed_predictions.json
+\end{verbatim}
+The baseline comparison uses the separately preserved
+\path{output/baseline_predictions.json}; it is not regenerated with the new
+implementation. Labels are used only by offline scoring and analysis, never
+as validator inputs.
+
+The unchanged Part 2 source at this checkpoint has SHA-256:
+\begin{verbatim}
+7b968ed3ccccbcc9b2fa6fb0f69f314453913ace8b0c41e1a4649495a0627551
+\end{verbatim}
+This also matches the source hash in the final design-only diagnostic record.
+The full prediction JSON itself does not contain per-stage judge responses,
+token counts, timings, or a source-hash field; the hash above identifies the
+preserved implementation, not additional metadata embedded in that JSON.
+The Part 2 prediction file is retained separately from subsequent Part 4
+predictions.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lrr}
+\toprule
+Metric & Baseline & Part 2 \\
+\midrule
+\texttt{execution\_failure} & $-0.0022$ & $1.0000$ \\
+\texttt{wrong\_data}        & $0.0000$  & $-0.1445$ \\
+\texttt{wrong\_chart}       & $0.1096$  & $0.3512$ \\
+\texttt{hard\_to\_read}     & $0.0000$  & $-0.2424$ \\
+\midrule
+Macro-MCC                  & $0.0268$  & $0.2411$ \\
+\bottomrule
+\end{tabular}
+\caption{Full-seed comparison using the official scorer; MCC values are
+rounded to four decimal places. Higher is better, and negative values indicate
+negative correlation, not merely a low accuracy percentage.}
+\label{tab:part2-mcc}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lrrrrr}
+\toprule
+Family & Evaluated runs & TP & TN & FP & FN \\
+\midrule
+\texttt{execution\_failure} & 110 & 12 & 98 & 0 & 0 \\
+\texttt{wrong\_data}        & 98  & 2  & 58 & 15 & 23 \\
+\texttt{wrong\_chart}       & 98  & 41 & 22 & 5 & 30 \\
+\texttt{hard\_to\_read}     & 98  & 0  & 51 & 8 & 39 \\
+\bottomrule
+\end{tabular}
+\caption{Part 2 confusion counts. The 12 human-labeled execution failures are
+excluded from the other families, as required by the scoring rule; a predicted
+execution failure would not exempt a nonterminal gold run from evaluation.}
+\label{tab:part2-confusion}
+\end{table}
+
+\paragraph{Interpretation and regressions.}
+Macro-MCC increases from approximately 0.0268 to 0.2411. The execution gate
+eliminates all 33 baseline execution false positives and all eight execution
+false negatives on this seed set. The design family detects 41 of 71 positive
+runs, rather than the baseline's three, but also introduces five false
+positives. Thus the overall increase does not mean that every family improves:
+data detects only two of 25 positives with 15 false positives, while readability
+detects none of 39 positives with eight false positives. Both resulting MCCs
+are negative.
+
+The unchanged data/readability procedures now run on candidates that the old
+execution gate rejected early. All 15 new data false positives and all eight
+new readability false positives lie among those 33 baseline execution false
+positives. This is an observed relationship between saved predictions, not
+proof that each model judgment was otherwise identical across experiments.
+It shows why correcting a terminal gate can expose downstream weaknesses.
+There is no ablation that separates the contributions of the gate and design
+audit; the reported gains belong to the complete two-change pipeline.
+
+\paragraph{Runtime and context limitations.}
+For an ordinary delivered chart, the new pipeline normally makes six model
+calls rather than the baseline's four. The old baseline also stopped early
+on many valid charts, whereas Part 2 checks all three nonterminal families
+on those charts. Larger structured design responses, retries, model/container
+startup, and context fallback can add runtime. The prediction file does not
+record the full run's actual call count, cost, or wall time, so the selected
+smoke-test token totals above are not extrapolated as measured full-run totals.
+
+A context-overflow warning was observed during the full evaluation. The
+implementation attempts its documented compaction/downscaling fallback;
+the completed file has full coverage and valid schema. This establishes
+completion, not preservation of every original detail after fallback.
+The saved predictions do not identify the final retained context or resolution
+for each stage. Consequently, I do not attribute a particular false negative
+to that warning. Loss of earlier code, omitted input rows, or lower image
+resolution remain general risks of the fallback.
 
 \subsection{Qualitative Analysis of Targeted Error Types}
-\emph{Pending the new predictions: evaluate both targeted patterns,
-document regressions, and analyze at least one FP and one FN.}
+
+\paragraph{Error type 1: execution polarity and final delivery.}
+The full evaluation confirms the targeted gate improvement, not just the
+selected smoke test. Runs 022 and 079 are no longer labeled execution failures:
+both have decodable delivered plots, despite the baseline's false-positive
+execution judgments. Run 089 now receives only the terminal execution label
+because its required output is missing, even though its trajectory contains
+successful code that saved a differently named file.
+Together with the full confusion counts, these outcomes support mitigation
+of the Part 1 execution pattern on the released set. They do not establish
+perfect performance on unseen decodable placeholders or corrupted artifacts.
+
+Removing an execution error does not guarantee overall correctness. Run 022
+now has a spurious data label, and run 079 still has an undetected design error.
+The table summarizes the full predictions for the original four examples:
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+Run & Human families & Baseline families & Part 2 families \\
+\midrule
+022 & None  & Execution & Data \\
+079 & Chart & Execution & None \\
+021 & Chart & None      & None \\
+202 & Chart & None      & Chart \\
+\bottomrule
+\end{tabular}
+\caption{Full-validator outcomes on the Part 1 examples. Execution, Data,
+and Chart abbreviate the prescribed family names; None means an empty error
+list. The overall judgment on 022 is still incorrect even though its execution
+false positive was fixed.}
+\label{tab:part2-targeted}
+\end{table}
+
+\paragraph{Error type 2: explicit axis requirements and final-artifact grounding.}
+Mitigation is partial. Run 202 changes from a design false negative to a
+family-level true positive, but run 021 remains a false negative in the full
+evaluation. For 202, the saved design evidence says the grids are vertical
+rather than horizontal. Inspection of the actual image shows no gridlines in
+either orientation; the required y-axis labels are also missing. Its correct
+binary family therefore does not demonstrate accurate enumeration or
+explanation of every violation.
+The combined two-change pipeline improves aggregate chart detection but does
+not solve visual hallucination, requirement
+omission, or preference for earlier correct code.
+
+\subsubsection{False positive: run 196, correct title reported as wrong}
+The task requests blue and orange groups, a beeswarm plot with box plots on
+the same chart, a y-axis label, a legend, and the exact title
+\texttt{Beeswarm plot and Boxplots, made with matplotlib}.
+The delivered PNG and final plotting code use that exact title, and the human
+label is an empty error list. The full Part 2 prediction nevertheless returns
+\texttt{wrong\_chart} for the title. Its evidence repeats identical required
+and observed strings and ends with the statement
+\texttt{The title is correct.}
+There is no title mismatch to support this positive label.
+
+This is a directly observable contradiction between a label and its evidence,
+not an ambiguous stylistic preference. The current parser enforces valid
+JSON, checklist IDs, statuses, and nonempty evidence, but does not establish
+that the evidence semantically entails a failure. A structurally valid
+failure can therefore become a false positive. The full file does not retain
+the original extraction and audit responses, so the precise hidden step that
+produced this decision cannot be reconstructed.
+A general evidence--decision consistency check, rather than a rule for this
+title or run ID, is one possible later improvement.
+
+\subsubsection{False negative: run 021, missing separate x-axis label}
+The task requires labeling both axes. As established in Part 1, the delivered
+PNG has service names as x-axis tick labels and a valid y-axis label
+\texttt{Latency (ms)}, but no separate x-axis label. The final executed plotting
+code contains the y-label and tick configuration without an x-label.
+The human label is \texttt{wrong\_chart}, while the complete Part 2 prediction
+has \texttt{errors=[]}.
+
+An omitted axis requirement, confusion between tick labels and an axis label,
+or an incorrect passing audit are plausible mechanisms; the saved full-run
+file contains no negative per-item audit log to distinguish them.
+The selected design-only smoke test detected this missing label, but that
+outcome does not override the full-run false negative.
+Run 196 likewise passed the selected smoke test and failed in the full run,
+despite the preserved source matching the smoke-test hash. These differences
+demonstrate that one selected successful check is insufficient evidence of
+repeatable correctness. They do not, by themselves, establish sampling
+randomness or context compaction as the cause.
+More reliable explicit-axis observation and semantic coverage checking are
+still missing.
+
+\paragraph{Additional failure boundaries: data versus design, and 3D geometry.}
+Run 022 illustrates a downstream regression. Its final code plots the same
+provided active-user values in both panels, using the required linear and
+logarithmic scales. The full prediction's \texttt{wrong\_data} explanation
+instead discusses titles, label formatting, and a preference that the two
+lines have the same color---a constraint not in the task. It identifies no
+incorrect value or selected subset. This points to leakage of design/aesthetic
+judgments into the unchanged data check, newly exposed when the execution
+gate permits it to run.
+
+Run 079 remains a design false negative. The executed
+\texttt{contourf} uses \texttt{zdir='z'} and a fixed
+\texttt{offset=np.min(Z)}, and the delivered image shows a flat contour
+projection on 3D axes rather than the requested filled 3D tricontour geometry.
+The new full prediction is empty.
+The separate smoke audit's contradictory descriptions of varying height and
+a single flat plane suggest weak geometric interpretation, but are not the
+full experiment's hidden reasoning. Checking the presence of 3D axes alone
+cannot certify the required geometry.
+
+\paragraph{Part 2 conclusion.}
+Both Part 1 proposals are implemented, the complete seed experiment is saved,
+and all five required scores, targeted effects, regressions, and concrete
+FP/FN analyses are reported. Further tuning is deferred: the remaining
+semantic-consistency, coverage, family-boundary, and geometry weaknesses can
+inform the new-task experiments and subsequent iteration in Parts 3--4.
+No claim of perfect seed or private-set performance is made.
 
 \section{Part 3: Design New Evaluation Tasks}
 

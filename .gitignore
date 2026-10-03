@@ -14,6 +14,11 @@ __pycache__/
 # Local course discussion notes (keep locally, not a submission deliverable)
 /piazza.md
 
+# Superseded local design-debug outputs, not official prediction files
+/output/step2_2_design_initial_checks.json
+/output/step2_2_design_prompt_checks.json
+/output/step2_2_design_observation_checks.json
+
 # Report build intermediates (report.tex and report.pdf must remain trackable)
 /report.aux
 /report.log

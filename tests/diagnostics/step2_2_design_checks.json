@@ -1,0 +1,338 @@
+{
+  "scope": "design_gate_only_not_full_validator_predictions",
+  "solution_sha256": "7b968ed3ccccbcc9b2fa6fb0f69f314453913ace8b0c41e1a4649495a0627551",
+  "live_design_checks": [
+    {
+      "run_id": "021",
+      "errors": [
+        {
+          "family": "wrong_chart",
+          "evidence": "Requirement: The y-axis must be labeled 'latency in milliseconds'. Scope: The y-axis. Task quote: 4. Give the chart a title and label both axes; the y axis is latency in milliseconds. Observed violation: The y-axis is labeled 'Latency (ms)', not 'latency in milliseconds' as required.\nRequirement: The x-axis must be labeled. Scope: The x-axis. Task quote: 4. Give the chart a title and label both axes; the y axis is latency in milliseconds. Observed violation: The x-axis does not have a label; it only has tick labels for the services."
+        }
+      ],
+      "model_call_count": 3,
+      "judge_responses": [
+        {
+          "stage": "requirements",
+          "elapsed_seconds": 7.577,
+          "finish_reason": "stop",
+          "content": "{\"requirements\": [\n {\"id\": \"r1\", \"kind\": \"chart_type\", \"requirement\": \"Draw a vertical box plot.\", \"scope\": \"The whole figure.\", \"source_id\": \"s1\"},\n {\"id\": \"r2\", \"kind\": \"layout\", \"requirement\": \"One box per service, side by side along the x axis in the order given above.\", \"scope\": \"The whole figure.\", \"source_id\": \"s7\"},\n {\"id\": \"r3\", \"kind\": \"layout\", \"requirement\": \"The service name must be the x tick label for each box.\", \"scope\": \"The x-axis.\", \"source_id\": \"s7\"},\n {\"id\": \"r4\", \"kind\": \"axes\", \"requirement\": \"The y-axis must be labeled 'latency in milliseconds'.\", \"scope\": \"The y-axis.\", \"source_id\": \"s10\"},\n {\"id\": \"r5\", \"kind\": \"axes\", \"requirement\": \"The chart must have a title.\", \"scope\": \"The whole figure.\", \"source_id\": \"s10\"},\n {\"id\": \"r6\", \"kind\": \"axes\", \"requirement\": \"The x-axis must be labeled.\", \"scope\": \"The x-axis.\", \"source_id\": \"s10\"},\n {\"id\": \"r7\", \"kind\": \"axes\", \"requirement\": \"The y-axis must be labeled.\", \"scope\": \"The y-axis.\", \"source_id\": \"s10\"},\n {\"id\": \"r8\", \"kind\": \"axes\", \"requirement\": \"The median line of every box must sit at that service's median latency.\", \"scope\": \"Each box plot.\", \"source_id\": \"s8\"},\n {\"id\": \"r9\", \"kind\": \"axes\", \"requirement\": \"Keep matplotlib's default whisker rule (1.5 x IQR).\", \"scope\": \"Each box plot.\", \"source_id\": \"s9\"},\n {\"id\": \"r10\", \"kind\": \"axes\", \"requirement\": \"Leave outliers showing as individual points.\", \"scope\": \"Each box plot.\", \"source_id\": \"s9\"}\n]}",
+          "usage": {
+            "completion_tokens": 461,
+            "prompt_tokens": 1098,
+            "total_tokens": 1559,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "image_only_observation",
+          "elapsed_seconds": 4.781,
+          "finish_reason": "stop",
+          "content": "This is a single-panel box plot titled \"Distribution of Request Latency Across Backend Services\".\n\n- **Title**: Distribution of Request Latency Across Backend Services\n- **Y-axis**: Label is \"Latency (ms)\". The axis ranges from 50 to 300, with major tick marks at 50, 100, 150, 200, 250, and 300.\n- **X-axis**: There are no visible axis labels. The categories are labeled below the boxes as \"auth\", \"catalog\", \"search\", and \"checkout\".\n- **Gridlines**: There are no horizontal or vertical gridlines.\n- **Legend/Colorbar**: There is no legend or colorbar.\n- **Annotations**: There are no annotations.\n- **Chart Geometry**: The plot is 2D. It contains four box plots, each representing a different backend service. The boxes are filled with a solid blue color and have black outlines. The median line within each box is an orange line. Whiskers extend from the boxes to the minimum and maximum non-outlier data points. Outliers are shown as individual open circles. The \"search\" service has two outliers at approximately 195 ms and 300 ms. The \"auth\" service has one outlier at approximately 240 ms. The \"catalog\" and \"checkout\" services have no visible outliers. The box plots are arranged horizontally, with the \"auth\" box on the far left and the \"search\" box on the far right. The boxes are not aligned on a flat plane; their positions are determined by the x-axis categories.",
+          "usage": {
+            "completion_tokens": 341,
+            "prompt_tokens": 4385,
+            "total_tokens": 4726,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "audit",
+          "elapsed_seconds": 7.262,
+          "finish_reason": "stop",
+          "content": "{\"checks\": [{\"id\": \"r1\", \"status\": \"pass\", \"evidence\": \"The figure displays a vertical box plot with four boxes, each representing a backend service, arranged along the x-axis.\"}, {\"id\": \"r2\", \"status\": \"pass\", \"evidence\": \"There is one box per service, arranged side by side along the x-axis in the order: auth, catalog, search, checkout, as specified.\"}, {\"id\": \"r3\", \"status\": \"pass\", \"evidence\": \"The x-axis tick labels are the service names: 'auth', 'catalog', 'search', and 'checkout', corresponding to each box.\"}, {\"id\": \"r4\", \"status\": \"fail\", \"evidence\": \"The y-axis is labeled 'Latency (ms)', not 'latency in milliseconds' as required.\"}, {\"id\": \"r5\", \"status\": \"pass\", \"evidence\": \"The chart has a title: 'Distribution of Request Latency Across Backend Services'.\"}, {\"id\": \"r6\", \"status\": \"fail\", \"evidence\": \"The x-axis does not have a label; it only has tick labels for the services.\"}, {\"id\": \"r7\", \"status\": \"pass\", \"evidence\": \"The y-axis is labeled 'Latency (ms)'.\"}, {\"id\": \"r8\", \"status\": \"pass\", \"evidence\": \"The median line in each box is positioned at the median of the data for that service, as confirmed by the data provided.\"}, {\"id\": \"r9\", \"status\": \"pass\", \"evidence\": \"The whiskers extend to the minimum and maximum non-outlier data points, following the default 1.5 x IQR rule, and outliers are shown as individual points.\"}, {\"id\": \"r10\", \"status\": \"pass\", \"evidence\": \"Outliers are visible as individual points (open circles) outside the whiskers for the 'auth' and 'checkout' services.\"}]}",
+          "usage": {
+            "completion_tokens": 431,
+            "prompt_tokens": 14503,
+            "total_tokens": 14934,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "202",
+      "errors": [
+        {
+          "family": "wrong_chart",
+          "evidence": "Requirement: Turn on horizontal grid lines in both panels. Scope: Both subplots. Task quote: - Turn on gridlines (horizontal) in both panels. Observed violation: The grid lines in both panels are vertical, not horizontal as required. The image shows vertical grid lines at each x-axis tick, which are not horizontal lines."
+        }
+      ],
+      "model_call_count": 3,
+      "judge_responses": [
+        {
+          "stage": "requirements",
+          "elapsed_seconds": 7.297,
+          "finish_reason": "stop",
+          "content": "{\"requirements\": [\n {\"id\": \"r1\", \"kind\": \"layout\", \"requirement\": \"Arrange the two box plots in a 1x2 grid of subplots.\", \"scope\": \"The whole figure.\", \"source_id\": \"s5\"},\n {\"id\": \"r2\", \"kind\": \"chart_type\", \"requirement\": \"Create a standard box plot in the first subplot.\", \"scope\": \"First subplot.\", \"source_id\": \"s2\"},\n {\"id\": \"r3\", \"kind\": \"chart_type\", \"requirement\": \"Create a notched box plot in the second subplot.\", \"scope\": \"Second subplot.\", \"source_id\": \"s2\"},\n {\"id\": \"r4\", \"kind\": \"axes\", \"requirement\": \"Set the title of the second subplot to exactly 'Notched box plot'.\", \"scope\": \"Second subplot.\", \"source_id\": \"s7\"},\n {\"id\": \"r5\", \"kind\": \"axes\", \"requirement\": \"Set the title of the first subplot to 'Standard box plot'.\", \"scope\": \"First subplot.\", \"source_id\": \"s2\"},\n {\"id\": \"r6\", \"kind\": \"axes\", \"requirement\": \"Set the x-axis label to 'Four separate samples'.\", \"scope\": \"Both subplots.\", \"source_id\": \"s8\"},\n {\"id\": \"r7\", \"kind\": \"axes\", \"requirement\": \"Set the y-axis label to 'Measured values'.\", \"scope\": \"Both subplots.\", \"source_id\": \"s9\"},\n {\"id\": \"r8\", \"kind\": \"axes\", \"requirement\": \"Turn on horizontal grid lines in both panels.\", \"scope\": \"Both subplots.\", \"source_id\": \"s6\"},\n {\"id\": \"r9\", \"kind\": \"style\", \"requirement\": \"Set the figure size to 10 by 5 inches.\", \"scope\": \"The whole figure.\", \"source_id\": \"s10\"},\n {\"id\": \"r10\", \"kind\": \"legend_annotation\", \"requirement\": \"Fill the boxes in both plots with different colors: orange for 'y1', purple for 'y2', yellow for 'y3', and cyan for 'y4'.\", \"scope\": \"Both subplots.\", \"source_id\": \"s3\"},\n {\"id\": \"r11\", \"kind\": \"legend_annotation\", \"requirement\": \"Label the data sets as 'y1', 'y2', 'y3', and 'y4'.\", \"scope\": \"Both subplots.\", \"source_id\": \"s2\"},\n {\"id\": \"r12\", \"kind\": \"style\", \"requirement\": \"Save the figure as figure.png.\", \"scope\": \"The whole figure.\", \"source_id\": \"s11\"}\n]}",
+          "usage": {
+            "completion_tokens": 597,
+            "prompt_tokens": 1154,
+            "total_tokens": 1751,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "image_only_observation",
+          "elapsed_seconds": 5.114,
+          "finish_reason": "stop",
+          "content": "The image displays two side-by-side box plots, labeled as \"Standard box plot\" (left) and \"Notched box plot\" (right).\n\n**Left Panel (Standard box plot):**\n- **Title:** \"Standard box plot\"\n- **X-axis:** Labeled \"Four separate samples\" with tick labels \"y1\", \"y2\", \"y3\", \"y4\".\n- **Y-axis:** Labeled \"y\" with tick labels ranging from -15 to 15.\n- **Data:** Four box plots, colored orange, purple, yellow, and cyan, are shown for the samples y1, y2, y3, and y4 respectively. Each box plot has a central line (median), a box (interquartile range), and whiskers extending to the minimum and maximum values (excluding outliers). Outliers are marked as individual points.\n- **Gridlines:** Vertical gridlines are present at each x-axis tick.\n- **Legend:** Absent.\n\n**Right Panel (Notched box plot):**\n- **Title:** \"Notched box plot\"\n- **X-axis:** Labeled \"Four separate samples\" with tick labels \"y1\", \"y2\", \"y3\", \"y4\".\n- **Y-axis:** Labeled \"y\" with tick labels ranging from -15 to 15.\n- **Data:** Four notched box plots, colored orange, purple, yellow, and cyan, are shown for the samples y1, y2, y3, and y4 respectively. The notches around the median indicate the confidence interval for the median. The plots also show outliers as individual points.\n- **Gridlines:** Vertical gridlines are present at each x-axis tick.\n- **Legend:** Absent.\n\n**General:**\n- Both plots are 2D.\n- The box plots in both panels are arranged horizontally along the x-axis.\n- The y-axis scale is identical in both panels.\n- The color scheme for the boxes is consistent between the two panels.",
+          "usage": {
+            "completion_tokens": 415,
+            "prompt_tokens": 681,
+            "total_tokens": 1096,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "audit",
+          "elapsed_seconds": 8.541,
+          "finish_reason": "stop",
+          "content": "{\"checks\": [{\"id\": \"r1\", \"status\": \"pass\", \"evidence\": \"The figure displays two box plots arranged in a 1x2 grid of subplots, with one plot on the left and one on the right, as required.\"}, {\"id\": \"r2\", \"status\": \"pass\", \"evidence\": \"The first subplot (left) is a standard box plot, as indicated by the title 'Standard box plot' and the absence of notches in the boxes.\"}, {\"id\": \"r3\", \"status\": \"pass\", \"evidence\": \"The second subplot (right) is a notched box plot, as indicated by the title 'Notched box plot' and the presence of notches in the boxes.\"}, {\"id\": \"r4\", \"status\": \"pass\", \"evidence\": \"The title of the second subplot is exactly 'Notched box plot', as observed in the image.\"}, {\"id\": \"r5\", \"status\": \"pass\", \"evidence\": \"The title of the first subplot is 'Standard box plot', as observed in the image.\"}, {\"id\": \"r6\", \"status\": \"pass\", \"evidence\": \"The x-axis label 'Four separate samples' is present on both subplots, as seen in the image.\"}, {\"id\": \"r7\", \"status\": \"pass\", \"evidence\": \"The y-axis label 'Measured values' is present on both subplots, as seen in the image.\"}, {\"id\": \"r8\", \"status\": \"fail\", \"evidence\": \"The grid lines in both panels are vertical, not horizontal as required. The image shows vertical grid lines at each x-axis tick, which are not horizontal lines.\"}, {\"id\": \"r9\", \"status\": \"pass\", \"evidence\": \"The figure size is 10 by 5 inches, as specified in the requirements and confirmed by the visual aspect ratio of the saved image.\"}, {\"id\": \"r10\", \"status\": \"pass\", \"evidence\": \"The boxes in both plots are filled with different colors: orange for 'y1', purple for 'y2', yellow for 'y3', and cyan for 'y4', as observed in the image.\"}, {\"id\": \"r11\", \"status\": \"pass\", \"evidence\": \"The data sets are labeled as 'y1', 'y2', 'y3', and 'y4' on the x-axis of both subplots, as seen in the image.\"}, {\"id\": \"r12\", \"status\": \"pass\", \"evidence\": \"The figure has been saved as figure.png, as confirmed by the file listing and the presence of the file in the workspace.\"}] }",
+          "usage": {
+            "completion_tokens": 582,
+            "prompt_tokens": 10524,
+            "total_tokens": 11106,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "022",
+      "errors": [],
+      "model_call_count": 3,
+      "judge_responses": [
+        {
+          "stage": "requirements",
+          "elapsed_seconds": 5.835,
+          "finish_reason": "stop",
+          "content": "{\"requirements\": [\n {\"id\": \"r1\", \"kind\": \"chart_type\", \"requirement\": \"A line plot.\", \"scope\": \"Both panels.\", \"source_id\": \"s4\"},\n {\"id\": \"r2\", \"kind\": \"layout\", \"requirement\": \"A 1x2 grid of subplots.\", \"scope\": \"The whole figure.\", \"source_id\": \"s1\"},\n {\"id\": \"r3\", \"kind\": \"layout\", \"requirement\": \"Two side-by-side panels.\", \"scope\": \"The whole figure.\", \"source_id\": \"s1\"},\n {\"id\": \"r4\", \"kind\": \"layout\", \"requirement\": \"Two genuinely separate subplots.\", \"scope\": \"The whole figure.\", \"source_id\": \"s7\"},\n {\"id\": \"r5\", \"kind\": \"layout\", \"requirement\": \"Do not overlay two axes with `twinx()`.\", \"scope\": \"The whole figure.\", \"source_id\": \"s7\"},\n {\"id\": \"r6\", \"kind\": \"axes\", \"requirement\": \"The x-axis must be labeled.\", \"scope\": \"Both panels.\", \"source_id\": \"s8\"},\n {\"id\": \"r7\", \"kind\": \"axes\", \"requirement\": \"The y-axis must be labeled.\", \"scope\": \"Both panels.\", \"source_id\": \"s8\"},\n {\"id\": \"r8\", \"kind\": \"axes\", \"requirement\": \"The left panel must use a linear y scale.\", \"scope\": \"Left panel.\", \"source_id\": \"s5\"},\n {\"id\": \"r9\", \"kind\": \"axes\", \"requirement\": \"The right panel must use a logarithmic y scale.\", \"scope\": \"Right panel.\", \"source_id\": \"s6\"},\n {\"id\": \"r10\", \"kind\": \"axes\", \"requirement\": \"The left panel's title must contain the word \\\"linear\\\".\", \"scope\": \"Left panel.\", \"source_id\": \"s5\"},\n {\"id\": \"r11\", \"kind\": \"axes\", \"requirement\": \"The right panel's title must contain the word \\\"log\\\".\", \"scope\": \"Right panel.\", \"source_id\": \"s6\"}\n]}",
+          "usage": {
+            "completion_tokens": 475,
+            "prompt_tokens": 913,
+            "total_tokens": 1388,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "image_only_observation",
+          "elapsed_seconds": 3.574,
+          "finish_reason": "stop",
+          "content": "This image contains two side-by-side line charts.\n\n**Left Panel:**\n- **Title:** Linear Scale\n- **X-axis Label:** Month\n- **Y-axis Label:** Active Users\n- **Gridlines:** Both horizontal and vertical gridlines are present.\n- **Data:** A blue line connects seven data points, showing an increasing trend in active users over seven months. The y-values increase gradually at first, then sharply from month 5 to 7.\n- **Legend:** Absent.\n- **Colorbar:** Absent.\n- **Annotations:** Absent.\n- **Geometry:** The data points are plotted on a 2D plane with a standard Cartesian coordinate system.\n\n**Right Panel:**\n- **Title:** Logarithmic Scale\n- **X-axis Label:** Month\n- **Y-axis Label:** Active Users\n- **Gridlines:** Both horizontal and vertical gridlines are present.\n- **Data:** An orange line connects seven data points, showing an increasing trend in active users over seven months. The y-values increase at a steady rate on the logarithmic scale.\n- **Legend:** Absent.\n- **Colorbar:** Absent.\n- **Annotations:** Absent.\n- **Geometry:** The data points are plotted on a 2D plane with a standard Cartesian coordinate system. The y-axis is logarithmic, while the x-axis is linear.",
+          "usage": {
+            "completion_tokens": 279,
+            "prompt_tokens": 793,
+            "total_tokens": 1072,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "audit",
+          "elapsed_seconds": 7.168,
+          "finish_reason": "stop",
+          "content": "{\"checks\": [{\"id\": \"r1\", \"status\": \"pass\", \"evidence\": \"The final image shows two line plots, one in each panel, with data points connected by lines, representing the monthly active-user series against month number on the x-axis.\"}, {\"id\": \"r2\", \"status\": \"pass\", \"evidence\": \"The final image displays a 1x2 grid of subplots, with two side-by-side panels arranged horizontally in a single row.\"}, {\"id\": \"r3\", \"status\": \"pass\", \"evidence\": \"The final image shows two distinct, side-by-side panels, each containing a separate plot, confirming a 1x2 grid layout.\"}, {\"id\": \"r4\", \"status\": \"pass\", \"evidence\": \"The final image contains two separate subplots, each with its own axes, and no evidence of overlaying axes using `twinx()`.\"}, {\"id\": \"r5\", \"status\": \"pass\", \"evidence\": \"The final image shows two distinct subplots with separate axes, and no `twinx()` function was used in the plotting code to create them.\"}, {\"id\": \"r6\", \"status\": \"pass\", \"evidence\": \"Both panels in the final image have an x-axis label; the left panel shows 'Month' and the right panel also shows 'Month'.\"}, {\"id\": \"r7\", \"status\": \"pass\", \"evidence\": \"Both panels in the final image have a y-axis label; the left panel shows 'Active Users' and the right panel also shows 'Active Users'.\"}, {\"id\": \"r8\", \"status\": \"pass\", \"evidence\": \"The left panel in the final image uses a linear y scale, as indicated by the evenly spaced tick marks and the title containing the word 'Linear'.\"}, {\"id\": \"r9\", \"status\": \"pass\", \"evidence\": \"The right panel in the final image uses a logarithmic y scale, as indicated by the non-uniformly spaced tick marks and the title containing the word 'log'.\"}, {\"id\": \"r10\", \"status\": \"pass\", \"evidence\": \"The left panel's title in the final image contains the word 'linear', as seen in the text 'Linear Scale'.\"}, {\"id\": \"r11\", \"status\": \"pass\", \"evidence\": \"The right panel's title in the final image contains the word 'log', as seen in the text 'Logarithmic Scale'.\"}]}",
+          "usage": {
+            "completion_tokens": 541,
+            "prompt_tokens": 5281,
+            "total_tokens": 5822,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "105",
+      "errors": [],
+      "model_call_count": 3,
+      "judge_responses": [
+        {
+          "stage": "requirements",
+          "elapsed_seconds": 6.472,
+          "finish_reason": "stop",
+          "content": "{\"requirements\": [\n {\"id\": \"r1\", \"kind\": \"chart_type\", \"requirement\": \"A standard box plot.\", \"scope\": \"First subplot.\", \"source_id\": \"s2\"},\n {\"id\": \"r2\", \"kind\": \"chart_type\", \"requirement\": \"A notched box plot.\", \"scope\": \"Second subplot.\", \"source_id\": \"s2\"},\n {\"id\": \"r3\", \"kind\": \"layout\", \"requirement\": \"Two subplots arranged in one row and two columns.\", \"scope\": \"Whole figure.\", \"source_id\": \"s2\"},\n {\"id\": \"r4\", \"kind\": \"axes\", \"requirement\": \"The first subplot should have the title 'Standard box plot'.\", \"scope\": \"First subplot.\", \"source_id\": \"s2\"},\n {\"id\": \"r5\", \"kind\": \"axes\", \"requirement\": \"The second subplot should have the title 'Notched box plot'.\", \"scope\": \"Second subplot.\", \"source_id\": \"s2\"},\n {\"id\": \"r6\", \"kind\": \"axes\", \"requirement\": \"The x-axis should be labeled 'Four separate samples'.\", \"scope\": \"Both subplots.\", \"source_id\": \"s3\"},\n {\"id\": \"r7\", \"kind\": \"axes\", \"requirement\": \"The y-axis should be labeled 'Measured values'.\", \"scope\": \"Both subplots.\", \"source_id\": \"s3\"},\n {\"id\": \"r8\", \"kind\": \"axes\", \"requirement\": \"Horizontal grid lines should be present.\", \"scope\": \"Both subplots.\", \"source_id\": \"s3\"},\n {\"id\": \"r9\", \"kind\": \"legend_annotation\", \"requirement\": \"The boxes in both plots should be filled with different colors: orange for 'y1', purple for 'y2', yellow for 'y3', and cyan for 'y4'.\", \"scope\": \"Both subplots.\", \"source_id\": \"s3\"},\n {\"id\": \"r10\", \"kind\": \"axes\", \"requirement\": \"The boxes in both plots should be vertically aligned.\", \"scope\": \"Both subplots.\", \"source_id\": \"s2\"},\n {\"id\": \"r11\", \"kind\": \"legend_annotation\", \"requirement\": \"The data sets should be labeled as 'y1', 'y2', 'y3', and 'y4'.\", \"scope\": \"Both subplots.\", \"source_id\": \"s2\"}\n]}",
+          "usage": {
+            "completion_tokens": 533,
+            "prompt_tokens": 943,
+            "total_tokens": 1476,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "image_only_observation",
+          "elapsed_seconds": 4.801,
+          "finish_reason": "stop",
+          "content": "This image displays two side-by-side box plots.\n\n**Left Panel:**\n- **Title:** Standard box plot\n- **Y-axis Label:** Measured values\n- **X-axis Label:** Four separate samples\n- **X-axis Tick Labels:** y1, y2, y3, y4\n- **Gridlines:** Horizontal dashed gridlines are present at y-values -10, -5, 0, 5, 10, 15.\n- **Data:** Four box plots are shown, each with a distinct color (orange, dark purple, yellow, cyan). Each box plot includes a box, a horizontal line inside the box (median), whiskers extending from the box, and individual points (outliers) plotted as circles. The boxes are filled with a solid color.\n\n**Right Panel:**\n- **Title:** Notched box plot\n- **Y-axis Label:** Measured values\n- **X-axis Label:** Four separate samples\n- **X-axis Tick Labels:** y1, y2, y3, y4\n- **Gridlines:** Horizontal dashed gridlines are present at y-values -10, -5, 0, 5, 10, 15.\n- **Data:** Four notched box plots are shown, each with a distinct color (orange, dark purple, yellow, cyan). Each box plot includes a box with a notch (a narrowing at the center), a horizontal line inside the box (median), whiskers, and individual points (outliers) plotted as circles. The boxes are filled with a solid color.\n\n**General:**\n- Both plots are two-dimensional.\n- The data points (outliers) are represented as individual circles.\n- The plots are arranged horizontally, with the standard box plot on the left and the notched box plot on the right.",
+          "usage": {
+            "completion_tokens": 379,
+            "prompt_tokens": 907,
+            "total_tokens": 1286,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "audit",
+          "elapsed_seconds": 6.75,
+          "finish_reason": "stop",
+          "content": "{\"checks\": [{\"id\": \"r1\", \"status\": \"pass\", \"evidence\": \"The first subplot displays a standard box plot with four boxes, each representing a different data set, and the boxes are filled with different colors as required.\"}, {\"id\": \"r2\", \"status\": \"pass\", \"evidence\": \"The second subplot displays a notched box plot with four notched boxes, each representing a different data set, and the boxes are filled with different colors as required.\"}, {\"id\": \"r3\", \"status\": \"pass\", \"evidence\": \"The figure contains two subplots arranged in one row and two columns, as specified.\"}, {\"id\": \"r4\", \"status\": \"pass\", \"evidence\": \"The first subplot has the title 'Standard box plot' as required.\"}, {\"id\": \"r5\", \"status\": \"pass\", \"evidence\": \"The second subplot has the title 'Notched box plot' as required.\"}, {\"id\": \"r6\", \"status\": \"pass\", \"evidence\": \"Both subplots have the x-axis labeled 'Four separate samples'.\"}, {\"id\": \"r7\", \"status\": \"pass\", \"evidence\": \"Both subplots have the y-axis labeled 'Measured values'.\"}, {\"id\": \"r8\", \"status\": \"pass\", \"evidence\": \"Both subplots have horizontal grid lines present, as indicated by the dashed lines across the plots.\"}, {\"id\": \"r9\", \"status\": \"pass\", \"evidence\": \"The boxes in both plots are filled with different colors: orange for 'y1', purple for 'y2', yellow for 'y3', and cyan for 'y4'.\"}, {\"id\": \"r10\", \"status\": \"pass\", \"evidence\": \"The boxes in both plots are vertically aligned, with the same x-axis positions for each data set.\"}, {\"id\": \"r11\", \"status\": \"pass\", \"evidence\": \"The data sets are labeled as 'y1', 'y2', 'y3', and 'y4' on the x-axis of both subplots.\"}]}",
+          "usage": {
+            "completion_tokens": 460,
+            "prompt_tokens": 9103,
+            "total_tokens": 9563,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "079",
+      "errors": [],
+      "model_call_count": 3,
+      "judge_responses": [
+        {
+          "stage": "requirements",
+          "elapsed_seconds": 3.534,
+          "finish_reason": "stop",
+          "content": "{\"requirements\": [\n {\"id\": \"r1\", \"kind\": \"chart_type\", \"requirement\": \"Create a filled 3D tricontour plot.\", \"scope\": \"The whole figure.\", \"source_id\": \"s1\"},\n {\"id\": \"r2\", \"kind\": \"axes\", \"requirement\": \"The plot must be 3D.\", \"scope\": \"The whole figure.\", \"source_id\": \"s1\"},\n {\"id\": \"r3\", \"kind\": \"axes\", \"requirement\": \"The radii range must extend from a minimum value up to 1.2.\", \"scope\": \"The whole figure.\", \"source_id\": \"s2\"},\n {\"id\": \"r4\", \"kind\": \"axes\", \"requirement\": \"The points must span a full circle.\", \"scope\": \"The whole figure.\", \"source_id\": \"s2\"},\n {\"id\": \"r5\", \"kind\": \"style\", \"requirement\": \"Apply the CMRmap colormap to the plot.\", \"scope\": \"The whole figure.\", \"source_id\": \"s3\"},\n {\"id\": \"r6\", \"kind\": \"style\", \"requirement\": \"Adjust the plot's viewing angle to enhance the visual representation of the data.\", \"scope\": \"The whole figure.\", \"source_id\": \"s4\"}\n]}",
+          "usage": {
+            "completion_tokens": 280,
+            "prompt_tokens": 634,
+            "total_tokens": 914,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "image_only_observation",
+          "elapsed_seconds": 3.975,
+          "finish_reason": "stop",
+          "content": "The image displays a single 3D plot titled \"Filled 3D Tricontour Plot\".\n\n- **Title**: \"Filled 3D Tricontour Plot\"\n- **Axes**:\n  - The x-axis is labeled \"X\" and ranges from -1.0 to 1.0.\n  - The y-axis is labeled \"Y\" and ranges from -1.0 to 1.0.\n  - The z-axis has no visible label and ranges from -4 to 4.\n- **Colorbar**: A vertical colorbar is present on the right side of the plot. It is labeled with values from -6.0 to 6.0, with the color transitioning from dark blue at -6.0 through purple, red, yellow, and light yellow to white at 6.0.\n- **Plot Elements**: The plot shows a filled, colored surface that is roughly elliptical in the x-y plane and varies in height (z-value). The surface is colored according to the colorbar, with a white circular region at the center. The surface appears to lie on a single flat plane in the z-direction.\n- **Gridlines**: Light gray gridlines are visible on the three planes of the 3D coordinate system.\n- **Annotations**: There are no other visible annotations or text.",
+          "usage": {
+            "completion_tokens": 270,
+            "prompt_tokens": 4711,
+            "total_tokens": 4981,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "audit",
+          "elapsed_seconds": 5.216,
+          "finish_reason": "stop",
+          "content": "{\"checks\": [{\"id\": \"r1\", \"status\": \"pass\", \"evidence\": \"The plot is a filled 3D tricontour plot, as indicated by the filled contour lines in a three-dimensional space with a color gradient representing the z-values.\"}, {\"id\": \"r2\", \"status\": \"pass\", \"evidence\": \"The plot is rendered in a 3D coordinate system, with x, y, and z axes visible, confirming it is a 3D plot.\"}, {\"id\": \"r3\", \"status\": \"pass\", \"evidence\": \"The radii range extends from a minimum value of 0.1 to 1.2, as specified in the code, and the points span a full circle, as indicated by the circular distribution of points in the x-y plane.\"}, {\"id\": \"r4\", \"status\": \"pass\", \"evidence\": \"The points span a full circle, as evidenced by the circular distribution of points in the x-y plane, covering all angles from 0 to 2π.\"}, {\"id\": \"r5\", \"status\": \"pass\", \"evidence\": \"The CMRmap colormap is applied to the plot, as seen in the color gradient from dark blue to white, which matches the CMRmap colormap.\"}, {\"id\": \"r6\", \"status\": \"pass\", \"evidence\": \"The viewing angle is adjusted, as indicated by the elevation and azimuth settings in the code (elev=20, azim=45), which enhance the visual representation of the data.\"}]}",
+          "usage": {
+            "completion_tokens": 334,
+            "prompt_tokens": 10219,
+            "total_tokens": 10553,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "097",
+      "errors": [],
+      "model_call_count": 3,
+      "judge_responses": [
+        {
+          "stage": "requirements",
+          "elapsed_seconds": 7.926,
+          "finish_reason": "stop",
+          "content": "{\"requirements\": [\n {\"id\": \"r1\", \"kind\": \"chart_type\", \"requirement\": \"Draw a filled contour map.\", \"scope\": \"The whole figure.\", \"source_id\": \"s1\"},\n {\"id\": \"r2\", \"kind\": \"chart_type\", \"requirement\": \"Use contourf.\", \"scope\": \"The whole figure.\", \"source_id\": \"s8\"},\n {\"id\": \"r3\", \"kind\": \"axes\", \"requirement\": \"Use exactly the levels: -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0.\", \"scope\": \"The whole figure.\", \"source_id\": \"s8\"},\n {\"id\": \"r4\", \"kind\": \"style\", \"requirement\": \"Use a perceptually uniform colormap such as viridis, cividis, magma or inferno.\", \"scope\": \"The whole figure.\", \"source_id\": \"s9\"},\n {\"id\": \"r5\", \"kind\": \"style\", \"requirement\": \"Do NOT use jet, rainbow or hsv.\", \"scope\": \"The whole figure.\", \"source_id\": \"s9\"},\n {\"id\": \"r6\", \"kind\": \"legend_annotation\", \"requirement\": \"Add a colorbar.\", \"scope\": \"The whole figure.\", \"source_id\": \"s10\"},\n {\"id\": \"r7\", \"kind\": \"legend_annotation\", \"requirement\": \"Label the colorbar.\", \"scope\": \"The whole figure.\", \"source_id\": \"s10\"},\n {\"id\": \"r8\", \"kind\": \"legend_annotation\", \"requirement\": \"Mark the grid point where f is largest with a single plotted marker at that (x, y) location (one point, no connecting line).\", \"scope\": \"The whole figure.\", \"source_id\": \"s11\"},\n {\"id\": \"r9\", \"kind\": \"legend_annotation\", \"requirement\": \"Put a text annotation next to the point where f is largest.\", \"scope\": \"The whole figure.\", \"source_id\": \"s11\"},\n {\"id\": \"r10\", \"kind\": \"axes\", \"requirement\": \"Keep the plotted region equal to the grid: x from -3 to 3, y from -2 to 2.\", \"scope\": \"The whole figure.\", \"source_id\": \"s12\"},\n {\"id\": \"r11\", \"kind\": \"axes\", \"requirement\": \"Give the figure a title.\", \"scope\": \"The whole figure.\", \"source_id\": \"s13\"},\n {\"id\": \"r12\", \"kind\": \"axes\", \"requirement\": \"Label the x-axis.\", \"scope\": \"The whole figure.\", \"source_id\": \"s13\"},\n {\"id\": \"r13\", \"kind\": \"axes\", \"requirement\": \"Label the y-axis.\", \"scope\": \"The whole figure.\", \"source_id\": \"s13\"}\n]}",
+          "usage": {
+            "completion_tokens": 652,
+            "prompt_tokens": 1074,
+            "total_tokens": 1726,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "image_only_observation",
+          "elapsed_seconds": 3.765,
+          "finish_reason": "stop",
+          "content": "This is a filled contour map titled \"Filled Contour Map of f(x, y) = sin(x) * cos(y)\".\n\n- **Panel**: There is one main panel.\n- **Title**: \"Filled Contour Map of f(x, y) = sin(x) * cos(y)\".\n- **X-axis**: Labeled \"x\". The axis ranges from -3 to 3.\n- **Y-axis**: Labeled \"y\". The axis ranges from -2.0 to 2.0.\n- **Colorbar**: Located on the right side of the plot. It is vertical and labeled \"f(x, y) = sin(x) * cos(y)\". The color scale ranges from -1.00 (dark purple) to 1.00 (bright yellow).\n- **Contour**: The plot displays a filled contour map with concentric, oval-shaped regions of varying color, representing the function's value. The colors transition from dark purple (low values) through blue, green, and yellow (high values).\n- **Annotation**: A red dot is placed at the point (1.5, 0.0). A black arrow points from a text box labeled \"Max: 1.000\" to this red dot.\n- **Gridlines**: No horizontal or vertical gridlines are visible.\n- **3D Elements**: The colored regions are on a flat 2D plane; there is no indication of height variation.",
+          "usage": {
+            "completion_tokens": 299,
+            "prompt_tokens": 1193,
+            "total_tokens": 1492,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "audit",
+          "elapsed_seconds": 8.883,
+          "finish_reason": "stop",
+          "content": "{\"checks\": [{\"id\": \"r1\", \"status\": \"pass\", \"evidence\": \"The figure displays a filled contour map with colored regions representing the scalar field f(x, y) = sin(x) * cos(y).\"}, {\"id\": \"r2\", \"status\": \"pass\", \"evidence\": \"The contourf function was used with the specified levels: -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0, as confirmed by the colorbar and contour lines.\"}, {\"id\": \"r3\", \"status\": \"pass\", \"evidence\": \"The contour levels are exactly -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0, matching the requirement and visible in the colorbar.\"}, {\"id\": \"r4\", \"status\": \"pass\", \"evidence\": \"The colormap used is viridis, which is a perceptually uniform colormap, as seen in the color transition from dark purple to bright yellow.\"}, {\"id\": \"r5\", \"status\": \"pass\", \"evidence\": \"The colormap used is viridis, which is not jet, rainbow, or hsv, thus avoiding the disallowed colormaps.\"}, {\"id\": \"r6\", \"status\": \"pass\", \"evidence\": \"A colorbar is present on the right side of the plot, indicating the value scale of the contour map.\"}, {\"id\": \"r7\", \"status\": \"pass\", \"evidence\": \"The colorbar is labeled 'f(x, y) = sin(x) * cos(y)', as required.\"}, {\"id\": \"r8\", \"status\": \"pass\", \"evidence\": \"A red dot marks the grid point where f is largest at (1.5, 0.0), and it is a single marker with no connecting line.\"}, {\"id\": \"r9\", \"status\": \"pass\", \"evidence\": \"A text annotation 'Max: 1.000' is placed next to the red dot, with an arrow pointing to it, as required.\"}, {\"id\": \"r10\", \"status\": \"pass\", \"evidence\": \"The x-axis ranges from -3 to 3 and the y-axis ranges from -2 to 2, matching the specified grid region.\"}, {\"id\": \"r11\", \"status\": \"pass\", \"evidence\": \"The figure has a title: 'Filled Contour Map of f(x, y) = sin(x) * cos(y)'.\"}, {\"id\": \"r12\", \"status\": \"pass\", \"evidence\": \"The x-axis is labeled 'x'.\"}, {\"id\": \"r13\", \"status\": \"pass\", \"evidence\": \"The y-axis is labeled 'y'.\"}]}",
+          "usage": {
+            "completion_tokens": 651,
+            "prompt_tokens": 7044,
+            "total_tokens": 7695,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "196",
+      "errors": [],
+      "model_call_count": 3,
+      "judge_responses": [
+        {
+          "stage": "requirements",
+          "elapsed_seconds": 4.981,
+          "finish_reason": "stop",
+          "content": "{\"requirements\": [\n {\"id\": \"r1\", \"kind\": \"chart_type\", \"requirement\": \"A combined beeswarm plot and boxplot.\", \"scope\": \"The whole figure.\", \"source_id\": \"s1\"},\n {\"id\": \"r2\", \"kind\": \"layout\", \"requirement\": \"One subplot.\", \"scope\": \"The whole figure.\", \"source_id\": \"s1\"},\n {\"id\": \"r3\", \"kind\": \"axes\", \"requirement\": \"A y-axis label.\", \"scope\": \"The y-axis.\", \"source_id\": \"s1\"},\n {\"id\": \"r4\", \"kind\": \"axes\", \"requirement\": \"A title.\", \"scope\": \"The whole figure.\", \"source_id\": \"s1\"},\n {\"id\": \"r5\", \"kind\": \"axes\", \"requirement\": \"The title text must be 'Beeswarm plot and Boxplots, made with matplotlib'.\", \"scope\": \"The whole figure.\", \"source_id\": \"s1\"},\n {\"id\": \"r6\", \"kind\": \"legend_annotation\", \"requirement\": \"A legend indicating the groups.\", \"scope\": \"The whole figure.\", \"source_id\": \"s1\"},\n {\"id\": \"r7\", \"kind\": \"style\", \"requirement\": \"The beeswarm plot for Group 1 must be colored blue.\", \"scope\": \"The beeswarm plot for Group 1.\", \"source_id\": \"s1\"},\n {\"id\": \"r8\", \"kind\": \"style\", \"requirement\": \"The beeswarm plot for Group 2 must be colored orange.\", \"scope\": \"The beeswarm plot for Group 2.\", \"source_id\": \"s1\"},\n {\"id\": \"r9\", \"kind\": \"style\", \"requirement\": \"The visualization must be displayed using matplotlib.\", \"scope\": \"The whole figure.\", \"source_id\": \"s1\"}\n]}",
+          "usage": {
+            "completion_tokens": 403,
+            "prompt_tokens": 890,
+            "total_tokens": 1293,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "image_only_observation",
+          "elapsed_seconds": 4.939,
+          "finish_reason": "stop",
+          "content": "This figure is a combined beeswarm plot and boxplot, titled \"Beeswarm plot and Boxplots, made with matplotlib\".\n\nThe plot has a single vertical axis labeled \"Value\" on the left. The horizontal axis has two labeled positions: \"0\" and \"1\", with no explicit axis label. The y-axis has tick labels at 25, 50, 75, 100, 125, 150, 175, and 200.\n\nThe figure contains two main data groupings, one for each horizontal position.\n\n- At horizontal position 0:\n  - A light blue shaded boxplot is shown, with a black horizontal line (median) near 98, a box from approximately 85 to 110, and whiskers extending to about 40 and 155.\n  - A beeswarm plot of blue circular points is overlaid, showing the individual data points for this group. The points are scattered vertically, with a concentration around the median.\n\n- At horizontal position 1:\n  - A light orange shaded boxplot is shown, with a black horizontal line (median) near 135, a box from approximately 110 to 145, and whiskers extending to about 70 and 205.\n  - A beeswarm plot of orange circular points is overlaid, showing the individual data points for this group. The points are scattered vertically, with a concentration around the median.\n\nA legend in the top right corner, titled \"Groups\", indicates that blue circles represent \"Group 1\" and orange circles represent \"Group 2\".\n\nThe data points are plotted as individual circles, and the boxplots are filled with a solid color. The points are not arranged in a 3D perspective; they lie on a flat plane. There are no visible gridlines, colorbars, or annotations.",
+          "usage": {
+            "completion_tokens": 398,
+            "prompt_tokens": 1221,
+            "total_tokens": 1619,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        },
+        {
+          "stage": "audit",
+          "elapsed_seconds": 5.835,
+          "finish_reason": "stop",
+          "content": "{\"checks\": [{\"id\": \"r1\", \"status\": \"pass\", \"evidence\": \"The figure displays a combined beeswarm plot and boxplot. The beeswarm plot shows individual data points for each group without overlap, and the boxplots are overlaid on the same chart to summarize the statistical distributions.\"}, {\"id\": \"r2\", \"status\": \"pass\", \"evidence\": \"The figure contains one subplot, as evidenced by the single axes with a shared x-axis and y-axis.\"}, {\"id\": \"r3\", \"status\": \"pass\", \"evidence\": \"The y-axis has a label that reads 'Value'.\"}, {\"id\": \"r4\", \"status\": \"pass\", \"evidence\": \"The figure has a title at the top that reads 'Beeswarm plot and Boxplots, made with matplotlib'.\"}, {\"id\": \"r5\", \"status\": \"pass\", \"evidence\": \"The title text is exactly 'Beeswarm plot and Boxplots, made with matplotlib'.\"}, {\"id\": \"r6\", \"status\": \"pass\", \"evidence\": \"There is a legend in the top right corner that indicates the groups, with blue circles representing 'Group 1' and orange circles representing 'Group 2'.\"}, {\"id\": \"r7\", \"status\": \"pass\", \"evidence\": \"The beeswarm plot for Group 1 is colored blue, as shown by the blue circular points in the left group.\"}, {\"id\": \"r8\", \"status\": \"pass\", \"evidence\": \"The beeswarm plot for Group 2 is colored orange, as shown by the orange circular points in the right group.\"}, {\"id\": \"r9\", \"status\": \"pass\", \"evidence\": \"The visualization was created using matplotlib, as indicated by the use of matplotlib.pyplot and seaborn functions in the code that produced the figure.\"}]}",
+          "usage": {
+            "completion_tokens": 402,
+            "prompt_tokens": 8361,
+            "total_tokens": 8763,
+            "completion_tokens_details": null,
+            "prompt_tokens_details": null
+          }
+        }
+      ]
+    }
+  ]
+}
