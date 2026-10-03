@@ -1,0 +1,117 @@
+{
+  "predictions": [
+    {
+      "run_id": "filtered_net_revenue__glm",
+      "errors": []
+    },
+    {
+      "run_id": "filtered_net_revenue__ministral",
+      "errors": [
+        {
+          "family": "wrong_data",
+          "evidence": "The plotted data differs from what was requested in the following way:\n\nThe title of the plot is \"Completed-order net revenue\" (with a lowercase 'o'), but the requested title is \"Completed-order net revenue\" (with a capital 'O' in \"Order\"). This is a minor but noticeable difference in capitalization."
+        }
+      ]
+    },
+    {
+      "run_id": "filtered_net_revenue__qwen",
+      "errors": [
+        {
+          "family": "execution_failure",
+          "evidence": "The run has no delivered figure.png available for evaluation."
+        }
+      ]
+    },
+    {
+      "run_id": "panel_unit_labels__glm",
+      "errors": []
+    },
+    {
+      "run_id": "panel_unit_labels__ministral",
+      "errors": [
+        {
+          "family": "wrong_data",
+          "evidence": "The plotted data differs from what was requested in the following way:\n\n1. The x-axis labels in both panels are not \"Sales channel\" as specified in the task. Instead, they are \"channel\" (or a variation of it) in the generated figure.\n2. The y-axis label for the left panel is \"Orders (count)\" as requested, but the y-axis label for the right panel is \"Refund rate (%)\" which is correct, but the label is not properly aligned with the axis in the generated figure.\n3. The title for the right panel is \"Refund rate by channel\" as requested, but the title for the left panel is \"Orders by channel\" which is correct, but the title is not properly aligned with the axis in the generated figure.\n4. The bar colors are not as specified in the task. The left panel uses a blue color and the right panel uses a green color, but the task does not specify the colors.\n5. The figure is saved as \"figure.png\" in the workspace as requested.\n\nThe main issue is that the x-axis labels are not \"Sales channel\" as specified in the task. The task requires that the x-axis labels be \"Sales channel\" in"
+        }
+      ]
+    },
+    {
+      "run_id": "panel_unit_labels__qwen",
+      "errors": [
+        {
+          "family": "execution_failure",
+          "evidence": "The run has no delivered figure.png available for evaluation."
+        }
+      ]
+    },
+    {
+      "run_id": "pooled_success_rates__glm",
+      "errors": []
+    },
+    {
+      "run_id": "pooled_success_rates__ministral",
+      "errors": [
+        {
+          "family": "wrong_data",
+          "evidence": "The plotted data differs from what was requested in the following way:\n\nThe title of the plot is \"Monthly pooled success rate\" (correct), but the x-axis label is \"Month\" (correct) and the y-axis label is \"Success rate (%)\" (correct). However, the plot shows the success rates for Jan, Feb, Mar, Apr in the correct order, with circular markers and annotations.\n\nThe issue is that the plot shows the success rates for each month as:\n- Jan: 18.0%\n- Feb: 27.5%\n- Mar: 66.0%\n- Apr: 35.0%\n\nBut the requested task is to compute the pooled success rate for each month by summing the successes and attempts across all groups in that month, then calculating the percentage.\n\nLet's verify the calculations:\n- Jan: (9+9)/(10+90) = 18/100 = 18.0% (correct)\n- Feb: (16+6)/(20+60) = 22/80 = 27.5% (correct)\n- Mar: (27+6)/(30+2"
+        },
+        {
+          "family": "hard_to_read",
+          "evidence": "The rendered figure is difficult to read because the text annotations (percentages) are overlapping with the data points and the line, making it hard to distinguish the values clearly. Additionally, the y-axis label \"Success rate (%)\" is partially obscured by the plot title, and the overall layout appears cramped, reducing readability."
+        }
+      ]
+    },
+    {
+      "run_id": "pooled_success_rates__qwen",
+      "errors": [
+        {
+          "family": "execution_failure",
+          "evidence": "The run has no delivered figure.png available for evaluation."
+        }
+      ]
+    },
+    {
+      "run_id": "semantic_unit_labels__glm",
+      "errors": []
+    },
+    {
+      "run_id": "semantic_unit_labels__ministral",
+      "errors": [
+        {
+          "family": "wrong_data",
+          "evidence": "The plotted data differs from what was requested in the following way: The x-axis label is \"Elapsed time (minutes)\" which is acceptable, but the y-axis label is \"Temperature (degrees Celsius)\" which is also acceptable. However, the title is \"Temperature during warm-up\" which matches the request. The data points are plotted correctly with circular markers, and the time is converted from seconds to minutes. The only potential issue is that the y-axis label could be more precise, but it is still acceptable. The plot is saved as \"figure.png\" as requested."
+        }
+      ]
+    },
+    {
+      "run_id": "semantic_unit_labels__qwen",
+      "errors": [
+        {
+          "family": "wrong_data",
+          "evidence": "The plotted data differs from what was requested in the following way:\n\nThe x-axis labels are numeric tick labels (0, 1, 2, 3, 4, 5, 6, 7) but the task requires a separate x-axis label that states elapsed time in minutes. The current plot has the label \"Elapsed time (minutes)\" which satisfies this requirement. However, the issue is that the x-axis labels are just numbers without units, which is acceptable as long as the axis label clearly states the unit. The plot does have the required x-axis label \"Elapsed time (minutes)\" and y-axis label \"Temperature (C)\", and the title is correct. The data is plotted in chronological order with circular markers, and the line color is blue. The figure is saved as figure.png. The only potential issue is that the x-axis labels are just numbers, but this is acceptable as long as the axis label is present. The plot appears to meet all requirements. However, the task requires the x-axis to be in minutes, and the data is correctly converted from seconds to minutes. The plot shows the correct data points and the correct labels. The only possible difference is that the x-axis labels are not explicitly"
+        },
+        {
+          "family": "hard_to_read",
+          "evidence": "The rendered figure is difficult to read because the y-axis label \"Temperature (C)\" is partially cut off at the top of the plot area. The text \"Temperature\" is visible, but the \"(C)\" portion is truncated, making it unclear what the unit is. This reduces the readability of the y-axis label."
+        }
+      ]
+    },
+    {
+      "run_id": "shared_axis_scope__glm",
+      "errors": []
+    },
+    {
+      "run_id": "shared_axis_scope__ministral",
+      "errors": []
+    },
+    {
+      "run_id": "shared_axis_scope__qwen",
+      "errors": [
+        {
+          "family": "execution_failure",
+          "evidence": "The run has no delivered figure.png available for evaluation."
+        }
+      ]
+    }
+  ]
+}

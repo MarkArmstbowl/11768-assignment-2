@@ -21,13 +21,21 @@
 \textbf{Working-draft status.}
 Parts 1--2 below record the completed baseline experiment, two evidence-backed
 error analyses, both proposed implementations, and the full seed-set comparison.
-Parts 3--4 are reserved for subsequent experiments.
+Part 3 task design, all 15 fixed-agent runs, and pre-iteration authored
+evaluation are complete. AI-assisted reference annotations were reviewed
+and confirmed by the author for all 15 runs. The author ran initialization,
+structural validation, and scoring.
+The Harbor worked example and all five authored package experiments are
+complete: each reference solution scored 1.0, and the two authored mutants
+scored 0.0 and 1.0.
+Part 4 is reserved for subsequent iteration.
 This is not yet the complete report for submission.
 \end{quote}
 
 The four reproduced seed figures are unchanged copies in
-\path{report_assets/}. This directory must accompany the source to recompile
-the report; the PDF embeds the images.
+\path{report_assets/}; the authored shared-axis figure is loaded directly
+from the required \path{runs/} directory. These source-image directories
+must accompany the source to recompile the report; the PDF embeds the images.
 
 \section{Part 1: Examine Seed Agent Runs}
 
@@ -1037,27 +1045,752 @@ No claim of perfect seed or private-set performance is made.
 \section{Part 3: Design New Evaluation Tasks}
 
 \subsection{Anticipated Generalization Weaknesses}
-\emph{Pending analysis of two visualization-task classes that may challenge
-the Part 2 validator.}
+
+The Part 2 validator is preserved unchanged while designing and evaluating
+new tasks. Its weaknesses motivate two task classes, not predetermined labels
+for future agent runs.
+
+\paragraph{Class 1: scoped design labels.}
+The \texttt{scoped\_design\_labels} class tests axis-label meaning and scope:
+separate labels on each panel, semantically equivalent quantity/unit wording,
+and shared figure-level labels. The full-run false negative on 021, the
+over-literal wording in its selected smoke audit, and the contradictory
+title false positive on 196 show that valid checklist structure does not
+guarantee correct interpretation or evidence--decision consistency.
+The implementation explicitly permits equivalent wording and shared labels,
+but recognizing them still depends on the fixed model. New data and different
+plot combinations test whether that policy generalizes rather than merely
+detecting one missing label in a familiar seed figure.
+
+\paragraph{Class 2: data/design separation.}
+The \texttt{data\_design\_separation} class requires small, explicit data
+transformations while leaving colors unrestricted. Its motivation is the
+negative data-family MCC and run 022's design/aesthetic explanation under a
+data label. The retained baseline data check does not implement deterministic
+recomputation of task-derived aggregates. Filtering, zero-result categories, and ratios of
+totals can produce plausible-looking but numerically wrong plots.
+Conversely, a numerically correct candidate must not be rejected merely for
+an unrequested color or wording preference.
+
+Both classes may also produce genuine readability or execution failures,
+which will be reviewed under the same four-family definitions. A task class
+is not an error family: for example, a unit-conversion error in a label-focused
+task is still \texttt{wrong\_data}. No class is assumed to force an agent error,
+and no human labels are filled before examining the generated artifacts.
 
 \subsection{Task Design}
-\emph{Pending at least five authored tasks, with at least two tasks in each
-of the two identified classes; document inputs, sources, and design rationale.}
+
+\paragraph{Descriptors, sources, and scope.}
+Five tasks have been authored under \path{tasks/<task_id>/}, with three in the
+first class and two in the second. Every \texttt{task.json} contains exactly
+the required \texttt{task\_id}, \texttt{task\_class},
+\texttt{instructions}, and \texttt{inputs} fields.
+Each task has one task-local CSV, referenced by a relative
+\path{inputs/<filename>.csv} path and exposed to the agent under its plain
+filename. The CSVs are small synthetic inputs constructed with AI assistance
+for this assignment; they are not external datasets or copies of released
+task inputs. All tasks use matplotlib and existing environment capabilities,
+without downloads or extra packages.
+
+The original tasks require only the final \texttt{figure.png} artifact.
+The Harbor-only requirements for \texttt{plot.py} and
+\texttt{plotted\_values.json} have not been added to these prompts.
+The original prompts and inputs will be held fixed once generation begins;
+packaging additions will stay inside \path{harbor/tasks/}.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{p{0.27\linewidth}p{0.20\linewidth}p{0.43\linewidth}}
+\toprule
+Task ID & Input & Main stress test \\
+\midrule
+\path{panel_unit_labels}
+& \path{channels.csv}
+& Per-panel labels for counts versus percentages; category ticks do not
+replace separate axis titles. \\
+\path{semantic_unit_labels}
+& \path{warmup.csv}
+& Seconds-to-minutes conversion with semantically equivalent axis-label
+wording rather than a single literal phrase. \\
+\path{shared_axis_scope}
+& \path{sensors.csv}
+& Two panels with one shared x-label and one shared y-label, rather than
+duplicated per-panel axis labels. \\
+\path{filtered_net_revenue}
+& \path{orders.csv}
+& Completed-only net sums, prescribed region order, and a retained
+zero-result category. \\
+\path{pooled_success_rates}
+& \path{cohorts.csv}
+& Ratios of totals with unequal group and monthly denominators, not
+unweighted averages of percentages. \\
+\bottomrule
+\end{tabular}
+\caption{Authored task design. The first three belong to
+\texttt{scoped\_design\_labels}; the last two belong to
+\texttt{data\_design\_separation}. All five were run once with each of the
+three fixed agents, producing the 15 required task/agent pairs.}
+\label{tab:authored-task-design}
+\end{table}
+
+\paragraph{Task 1: panel-specific quantities and units.}
+\path{panel_unit_labels} has four channel rows, ordered
+Retail, Wholesale, Online, Partners.
+The left vertical-bar panel uses order counts $(120,75,210,45)$; the right
+uses the already-percent-valued refund rates $(4,8,3,6)$.
+Both panels require their own \texttt{Sales channel} x-label, but their
+y-labels differ: \texttt{Orders (count)} and \texttt{Refund rate (\%)}.
+The panel titles are explicit. This checks whether a validator verifies both
+scopes and distinguishes count and percentage units instead of certifying the
+figure from one correctly labeled panel or from the category ticks.
+
+\paragraph{Task 2: equivalent wording with a real unit conversion.}
+\path{semantic_unit_labels} supplies six elapsed-second values
+$(0,90,180,270,360,450)$ and temperatures
+$(18,20,25,31,36,39)$ in degrees Celsius.
+The expected plotted times in minutes are $(0,1.5,3,4.5,6,7.5)$.
+The single line chart needs circular markers and the title
+\texttt{Temperature during warm-up}; axis labels must express the quantities
+and units, but need not match one literal string. For example,
+\texttt{Time (min)} and \texttt{Elapsed time (minutes)} are both allowed.
+Missing separate labels are design errors, using the unconverted seconds as
+minutes is a data error, and a valid unit abbreviation is neither.
+
+\paragraph{Task 3: shared figure-level scope.}
+\path{shared_axis_scope} supplies times $(0,1,2,3,4,5)$ seconds and
+two voltage series:
+$(0.2,0.6,1.2,0.7,0.1,-0.3)$ and
+$(1.2,0.9,0.5,0.1,-0.4,-0.8)$.
+The upper and lower line panels are titled \texttt{Sensor A} and
+\texttt{Sensor B}. The figure requests exactly one global
+\texttt{Elapsed time (s)} label and one global
+\texttt{Amplitude (V)} label, without separate per-panel axis labels.
+The common x-axis scale and global label scope are requirements, with the
+x-label beneath the pair and the y-label alongside it.
+No particular matplotlib API or exact pixel coordinate is prescribed.
+This tests whether the validator invents a requirement to repeat labels on
+each panel or treats a correctly shared label as missing.
+
+\paragraph{Task 4: filtered net sums with a zero-result category.}
+\path{filtered_net_revenue} contains ten order rows.
+For status exactly \texttt{completed}, the required region totals are:
+\[
+\begin{array}{ll}
+\text{North}: &(120-20)+(60-15)=145,\\
+\text{South}: &0\quad\text{(no completed rows)},\\
+\text{East}:  &(80-10)+(30-5)=95,\\
+\text{West}:  &(90-15)+(40-10)=105.
+\end{array}
+\]
+The chart must retain North, South, East, West in that order and annotate
+every integer value, including South's zero.
+Ignoring the status filter instead gives $(345,225,140,105)$, while summing
+completed gross amounts without subtracting refunds gives $(180,0,110,130)$.
+These are plausible data mistakes even when the bar-chart layout is correct.
+Colors remain unrestricted; the title, separate axis labels, and zero y-axis
+origin are explicit design requirements.
+
+\paragraph{Task 5: monthly ratios of totals.}
+\path{pooled_success_rates} contains eight rows, with two groups per month
+and deliberately shuffled input order. Within each month, the target is
+\[
+100\,\frac{\sum_i \text{successes}_i}{\sum_i \text{attempts}_i}.
+\]
+The percentages are plotted in Jan, Feb, Mar, Apr order:
+\begin{center}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Month & Successes & Attempts & Correct rate & Wrong equal-group mean \\
+\midrule
+Jan & 18 & 100 & $18.0\%$ & $50.0\%$ \\
+Feb & 22 & 80  & $27.5\%$ & $45.0\%$ \\
+Mar & 33 & 50  & $66.0\%$ & $60.0\%$ \\
+Apr & 7  & 20  & $35.0\%$ & $50.0\%$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Varying monthly totals also prevents raw success counts from accidentally
+matching the percentages. The requested single line has circular markers,
+one-decimal percentage annotations, explicit title and axis labels, and
+y-limits 0--100. Correct values with missing annotations would be a design
+failure; an incorrect ratio is a data failure. Both families may apply when
+both mistakes are present.
+
+\paragraph{Offline verification and resource limits.}
+The official descriptor/input check passes for all five tasks.
+The 11 offline tests in \path{tests/test_authored_tasks.py} independently
+check the input values and arithmetic against literal targets, class counts,
+descriptor fields, and absence of Harbor-only prompt additions.
+They also construct all 15 requests locally to verify the three fixed model
+identities, unchanged prompt/input bytes, and required \texttt{figure.png}
+output. They make no model calls and do not simulate candidate success.
+With the 91 Part 2 execution/design tests, the current offline suite has
+102 passing tests.
+\begin{verbatim}
+uv run python -m workflow validate-tasks
+uv run python -m unittest discover -s tests \
+  -p 'test_authored_tasks.py'
+\end{verbatim}
+
+The tasks have only 4--10 input rows each and require ordinary plotting and
+small calculations. This reduces task-side work but does not guarantee
+completion by a small model: tool-format errors or repeated actions can still
+consume the fixed 20-step budget.
+The provided runner remains unchanged at 20 agent steps, 120 seconds per
+shell command, and 15 minutes of agent walltime.
+Hitting a limit with a delivered plot requires
+inspection of that plot rather than an automatic execution-failure label.
+A remote exception that leaves no \texttt{result.json} is an uncollected run,
+not a fabricated completed example. All 15 run records were collected in this
+experiment; there were no missing task/model combinations.
+The author has initialized, structurally validated, and scored the current
+reference annotations, then reviewed all 15 runs and confirmed the labels
+without changes. The authored Harbor experiments and worked example are
+recorded below.
 
 \subsection{Agent Runs and Labeling}
-\emph{Pending one run per authored task for each of the three fixed agents,
-and human review of every resulting run.}
+
+\paragraph{Fixed agents and collected artifacts.}
+Each of the five tasks was run once with each supplied visualization agent:
+\begin{itemize}
+\item \path{Qwen/Qwen2.5-Coder-3B-Instruct};
+\item \path{mistralai/Ministral-3-14B-Instruct-2512};
+\item \path{zai-org/GLM-4.7-Flash}.
+\end{itemize}
+The scaffold, model identities, and generation budgets were not modified to
+rescue unsuccessful attempts. The generation command was:
+\begin{verbatim}
+uv run python -m workflow generate
+\end{verbatim}
+There are 15 \path{runs/<task_id>__<agent>/result.json} records, one per
+task/model combination. Eleven runs delivered final PNGs; four delivered
+no figure. Unsuccessful runs were retained rather than replaced with
+success-selected reruns. A failed visualization attempt is still a collected
+evaluation example when its task and trajectory have been recorded.
+
+\paragraph{Reference-label method and human-review status.}
+The author initialized the blank entries using the prescribed command:
+\begin{verbatim}
+uv run python -m workflow init-labels
+\end{verbatim}
+The entries in \path{labels.json} were then filled through AI-assisted
+inspection of the task instructions, source CSVs, complete executed
+trajectories, and final images. Numerical targets were independently derived
+from the input tables described above. Reference annotations were based on
+those artifacts, not copied from validator predictions or changed to make a
+prediction appear correct.
+An acceptable run receives \texttt{[]}; each other run receives an
+evidence-bearing entry for each applicable family.
+A missing valid final figure receives only \texttt{execution\_failure}.
+If a figure exists, distinct design and readability errors may coexist.
+
+The AI-assisted annotations were a starting point for the required
+human review. The author subsequently reviewed all 15 run entries using
+a task-by-task index showing each delivered figure or missing-figure
+outcome, the proposed label and evidence, and a link to the full
+\texttt{result.json} trajectory. The author agreed with all 15 labels;
+no entry in \path{labels.json} was changed after this review.
+In particular, the author judged the close zero annotation and South
+tick text in \path{filtered_net_revenue__glm} still readable, and
+confirmed the overlapping y-label/ticks in
+\path{shared_axis_scope__ministral}. The scoring results below therefore
+refer to the author's confirmed reference labels, while the assistance
+used to prepare the initial annotations is disclosed.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{p{0.40\linewidth}ccc}
+\toprule
+Task ID & Qwen & Ministral & GLM \\
+\midrule
+\path{filtered_net_revenue} & E & A & A \\
+\path{panel_unit_labels} & E & A & A \\
+\path{pooled_success_rates} & E & A & A \\
+\path{semantic_unit_labels} & A & A & A \\
+\path{shared_axis_scope} & E & D+R & A \\
+\bottomrule
+\end{tabular}
+\caption{Human-confirmed reference annotations for all 15 runs.
+A means acceptable; E is \texttt{execution\_failure};
+D is \texttt{wrong\_chart}; R is \texttt{hard\_to\_read}.
+The complete run ID is the task ID followed by
+\texttt{\_\_qwen}, \texttt{\_\_ministral}, or \texttt{\_\_glm}.
+There are ten acceptable runs, four execution failures, and one delivered
+figure with both design and readability errors.}
+\label{tab:authored-labels}
+\end{table}
+
+\paragraph{Four visualization-agent execution failures.}
+All four missing-artifact examples are Qwen runs, with different observable
+failure modes:
+\begin{itemize}
+\item \path{filtered_net_revenue__qwen} ends with
+\texttt{LimitsExceeded}. Seventeen of its 20 executed actions invoke bare
+\texttt{python3}, without a script or supplied plotting code; those actions
+return empty output. No \texttt{figure.png} is delivered.
+\item \path{panel_unit_labels__qwen} initially selects the nonexistent
+\texttt{Sales channel} column. Even after displaying the real
+\texttt{channel,orders,refund\_rate\_pct} header, it repeats 15 commands
+accessing the nonexistent \texttt{Order count} column. Each raises
+\texttt{KeyError} before saving, and the run reaches the 20-step cap without
+a final PNG.
+\item \path{pooled_success_rates__qwen} makes three plotting attempts that
+apply \texttt{pd.to\_datetime} to categorical month names and raise
+\texttt{OutOfBoundsDatetime}. Fifteen attempts to install
+\texttt{pandas==1.3.5} fail during the build with missing
+\texttt{pkg\_resources}. No successful plotting attempt follows before
+\texttt{LimitsExceeded}. This extra installation is an agent action, not
+a dependency required by the authored task.
+\item \path{shared_axis_scope__qwen} attempts to download
+\texttt{sensors.csv} from a placeholder \path{yourusername/yourrepo}
+GitHub URL, receives HTTP 404, and issues the submission marker without
+executing plotting code. The outcome says \texttt{Submitted}, but
+\texttt{figure.png} is absent. The supplied CSV was already available in
+the workspace.
+\end{itemize}
+These trajectories demonstrate failures under the fixed agent configuration;
+they do not establish an internal model cause.
+The successful \path{semantic_unit_labels__qwen} example also prevents the
+overgeneralization that Qwen fails every task.
+
+\paragraph{A delivered figure with two distinct errors.}
+\path{shared_axis_scope__ministral} plots all supplied sensor values in the
+correct panels and uses a shared x-axis scale.
+Its initial \path{get_shared_x_axes().join()} call fails, but it repairs the
+program using \texttt{sharex=True} and saves a final PNG.
+That repaired intermediate exception is not an execution failure.
+
+The task requires the global \texttt{Elapsed time (s)} label beneath the
+pair of panels. In the final artifact it sits inside the bottom panel,
+just above its bottom spine. This is a \texttt{wrong\_chart} violation of
+an explicit position requirement.
+The global \texttt{Amplitude (V)} label also intersects numerical y ticks
+near the junction of the panels, including $-0.2$ and $1.25$, supporting
+\texttt{hard\_to\_read} separately.
+The program does create figure-level text using \texttt{fig.text}; the
+x-label is not missing or merely per-panel text.
+The error is its position, not its wording or scope.
+The final code uses fixed text coordinates followed by
+\texttt{tight\_layout()} without reserving space for the shared labels,
+and the actual image confirms the overlap.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.80\linewidth]{runs/shared_axis_scope__ministral/figure.png}
+\caption{Unmodified final artifact from
+\texttt{shared\_axis\_scope\_\_ministral}.
+The global x-label is inside the lower panel; the global y-label overlaps
+numerical y ticks. Correct numerical values do not eliminate these
+separate design and readability violations.}
+\label{fig:authored-shared-min}
+\end{figure}
+
+\paragraph{Acceptable results and ambiguous boundaries.}
+All five GLM runs, four other Ministral runs, and Qwen's temperature run
+receive \texttt{[]}.
+The numerical-task figures use $(145,0,95,105)$ USD for net revenue and
+$(18.0,27.5,66.0,35.0)\%$ for monthly pooled rates.
+Both channel figures use order counts $(120,75,210,45)$ and refund rates
+$(4,8,3,6)\%$, with separate requested axis labels on both panels.
+All three temperature figures retain six observations and convert their
+times to $(0,1.5,3,4.5,6,7.5)$ minutes, with circular markers.
+
+Several labeling boundaries matter.
+The zero annotation in \path{filtered_net_revenue__glm} sits close above
+the South tick name. The author reviewed the enlarged image and judged
+both texts still distinguishable and readable. It is accepted as mild
+crowding, not labeled \texttt{hard\_to\_read}.
+The temperature task expressly permits
+\texttt{Temperature (C)} as well as \texttt{Temperature (degrees Celsius)};
+different permitted unit wording is not an error.
+Numeric x tick text is hidden in the Ministral shared-axis artifact, but
+the prompt allows rather than requires such tick labels, so their absence
+is not an extra violation.
+Unrestricted colors, readable rotated category ticks, warnings, and an
+unavailable auxiliary \texttt{file} command do not by themselves justify
+an error. An intermediate incomplete image that is later overwritten does
+not override the final artifact.
+
+\paragraph{Observed label validation.}
+The author ran:
+\begin{verbatim}
+uv run python -m workflow validate-labels
+\end{verbatim}
+and reported \texttt{valid: 15 human-reviewed label(s)}.
+The checker establishes non-null entries, unique IDs, evidence fields,
+execution-failure exclusivity, and exact run coverage.
+Its wording alone does not certify personal human inspection; the
+separate author review described above supplied that confirmation.
 
 \subsection{Validator Performance on New Tasks}
-\emph{Pending the authored-run predictions and all four family MCCs plus
-macro-MCC; distinguish agent failures from validator mistakes.}
+
+\paragraph{Pre-iteration implementation and reproduction.}
+The unchanged Part 2 validator was evaluated on the 15 authored runs,
+using the same fixed validator model as before. Its source SHA-256 at this
+checkpoint is:
+\begin{verbatim}
+7b968ed3ccccbcc9b2fa6fb0f69f314453913ace8b0c41e1a4649495a0627551
+\end{verbatim}
+The prediction file is
+\path{output/pre_iteration_authored_predictions.json}.
+The author ran the evaluation and subsequently the following scoring command:
+\begin{verbatim}
+uv run python -m validator.runner \
+  --artifacts runs \
+  --out output/pre_iteration_authored_predictions.json
+
+uv run python -m workflow score \
+  --predictions output/pre_iteration_authored_predictions.json
+\end{verbatim}
+The scorer uses \path{labels.json} by default.
+The reported values below are the author's observed command output,
+rounded to four decimal places.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lrrrrrrr}
+\toprule
+Error family & N & TP & TN & FP & FN & $+/-$ & MCC \\
+\midrule
+\texttt{execution\_failure} & 15 & 4 & 11 & 0 & 0 & 4/11 & $1.0000$ \\
+\texttt{wrong\_data} & 11 & 0 & 6 & 5 & 0 & 0/11 & $0.0000$ \\
+\texttt{wrong\_chart} & 11 & 0 & 10 & 0 & 1 & 1/10 & $0.0000$ \\
+\texttt{hard\_to\_read} & 11 & 0 & 8 & 2 & 1 & 1/10 & $-0.1491$ \\
+\bottomrule
+\end{tabular}
+\caption{Measured pre-iteration performance against the human-confirmed
+reference labels. N is eligible run count; $+/-$ denotes positive/negative
+reference support. Macro-MCC is \textbf{0.2127}.
+The data family has insufficient positive reference support.}
+\label{tab:authored-pre}
+\end{table}
+
+\paragraph{Support, scoring conventions, and scope.}
+Execution is evaluated on all 15 records.
+The four terminal reference execution failures are excluded from the
+other three families, leaving 11 eligible examples in each.
+No reference annotation names \texttt{wrong\_data}, so its zero MCC
+reflects the assignment's insufficient-support convention, not perfect
+data checking or an estimate of data-error recall.
+The five data false alarms remain important measurable failures on correct
+numerical transformations.
+In contrast, \texttt{wrong\_chart} has both reference classes, but the
+validator predicts no chart errors and misses the one positive; its MCC
+is zero because predictions are constant-negative.
+Readability has two false alarms and one missed positive, hence negative MCC.
+
+Macro-MCC still averages all four families, including the
+insufficient-support zero; it is not recomputed over only supported families.
+The perfect execution score drives much of the $0.2127$ aggregate.
+On this reference set, even perfect predictions in the other three supported
+families would cap macro-MCC at $0.75$ under the data-support convention.
+This is a property of this small set, not a ceiling on the private grading
+set, which contains both reference classes for every family.
+No additional reference error was invented to manufacture balanced support.
+
+Part 3 specifies reporting and analyzing these outcomes, not a minimum
+authored-set MCC. The five tasks are deliberately selected stress tests,
+not a representative estimate of private-set performance.
+The difference from the seed-set macro-MCC of $0.2411$ is not a measured
+regression caused by a code change: the implementation is unchanged and
+the task and label distributions differ.
+Scores and error counts use the author's confirmed 15-run reference file.
+
+\paragraph{Successes.}
+All four missing-artifact runs are correctly reported as execution failures,
+including the Qwen run whose outcome says \texttt{Submitted}.
+This supports the artifact-delivery gate on these observed cases, without
+claiming universal execution accuracy.
+The five acceptable GLM runs all receive \texttt{[]}.
+However, an empty prediction is not always correct: the genuinely flawed
+Ministral shared-axis figure also receives \texttt{[]}.
+
+\paragraph{Five data-family false positives.}
+The exact false-positive runs are:
+\path{filtered_net_revenue__ministral},
+\path{panel_unit_labels__ministral},
+\path{pooled_success_rates__ministral},
+\path{semantic_unit_labels__ministral}, and
+\path{semantic_unit_labels__qwen}.
+Their explanations identify concrete validator weaknesses:
+\begin{itemize}
+\item For the filtered-revenue run, the explanation quotes
+\texttt{Completed-order net revenue} on both sides but alleges a capitalization
+difference. The requested and displayed titles are identical, and the four
+net sums are correct. Even a genuine title mismatch would be a design issue,
+not evidence that plotted numerical data is wrong.
+\item For the channel run, the explanation alleges x-labels reading
+\texttt{channel}; both actual panels visibly read \texttt{Sales channel}.
+It also objects to the blue/green colors while acknowledging that colors
+were unspecified. Correct plotted counts and refund rates are not invalidated
+by these fabricated or out-of-family complaints.
+\item For the pooled-rate run, the explanation lists the correct four
+percentages and begins recomputing the correct ratios, without establishing
+a discrepancy between requested and plotted values. The executed calculation,
+final annotations, and independently derived targets agree.
+\item For the Ministral temperature run, the explanation itself accepts the
+axis labels, title, converted time, and circular-marker data, then describes
+its remaining alleged concern as still acceptable. It nevertheless emits
+\texttt{wrong\_data}, a decision/evidence contradiction.
+\item For the Qwen temperature run, the explanation repeatedly acknowledges
+the valid separate axis labels, correct conversion, and correct points.
+Numeric tick labels need not each repeat the unit when a separate axis label
+states it. This speculation does not establish a plotted-data error.
+\end{itemize}
+
+\paragraph{Readability false positives and missed errors.}
+\path{pooled_success_rates__ministral} is incorrectly accused of overlapping
+annotations and a y-label obscured by the title. In the final image the
+percentage annotations are separated from their points and the y-label
+is unobscured.
+\path{semantic_unit_labels__qwen} is incorrectly accused of a partly clipped
+\texttt{Temperature (C)} label; the complete label, including \texttt{(C)},
+is visible.
+These are two readability false positives.
+
+Conversely, \path{shared_axis_scope__ministral} receives no errors despite
+the misplaced shared x-label and overlapping shared y-label
+(Figure~\ref{fig:authored-shared-min}).
+It is therefore one false negative in each of the design and readability
+families. The absence of intermediate design-audit outputs prevents
+pinpointing the precise stage that missed the design violation.
+Possible mechanisms include omitting relative placement from the checklist,
+accepting the existence of \texttt{fig.text} without verifying its location,
+or weak visual localization; these are hypotheses, not logged causes.
+
+\paragraph{Agent failures versus validator failures.}
+The Qwen action loops, invalid-column persistence, unsuccessful package-repair
+attempts, and premature submission are failures of the visualization agents.
+The delivered Ministral shared-label layout is another agent mistake.
+By contrast, fabricated title/label differences, objections to unrestricted
+colors, contradictory data judgments, imaginary clipping, and acceptance
+of the genuine overlap are failures of the validator.
+A recovered intermediate error must not be conflated with a failed final
+artifact.
+
+\paragraph{Mechanism motivating a subsequent improvement.}
+The data and readability branches still use \path{validator/baseline.py}'s
+broad YES/NO helper. It requests at most 250 output tokens and turns any
+leading \texttt{YES} into an error of the selected family; it does not check
+whether the explanation supports that decision or stays within that family.
+This implementation and the observed contradictory positives motivate a
+general improvement to structured decisions and evidence consistency,
+rather than a task-ID-specific exception.
+
+Some saved explanations end mid-sentence or mid-calculation, consistent with
+an output-limit problem. However, the prediction file does not preserve
+completion \texttt{finish\_reason}, so truncation and its causal effect
+cannot be established from these predictions alone.
+The chart-audit miss likewise cannot be attributed to a particular internal
+stage without intermediate outputs.
+No Part 4 validator change or targeted rescue call has been made at this
+checkpoint.
 
 \subsection{Harbor Packaging}
-\emph{Pending actual Harbor evaluations: all authored reference solutions
-must score 1.0; two plausible-but-wrong mutants must demonstrate rejection
-and acceptance respectively. The final report must explain both rewards,
-the verifier's boundaries for all four error families, and why a task-specific
-verifier cannot grade unknown private tasks.}
+
+\paragraph{Completed staff worked example.}
+Before packaging the authored tasks, the author ran the supplied Harbor
+example under local Docker with the project's Harbor dependency.
+Unlike the earlier model-based validator, this example uses a deterministic
+pytest verifier. The \texttt{oracle} agent executes the task's reference
+\path{solution/solve.sh}; \texttt{nop} performs no agent actions.
+Neither invokes an LLM.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{llrrr}
+\toprule
+Job & Answer under test & Reward & Exceptions & Time (s) \\
+\midrule
+\path{example-oracle} & Staff reference & $1.0$ & 0 & 30 \\
+\path{example-nop} & No answer & $0.0$ & 0 & 10 \\
+\path{example-illegible} & Staff unreadable mutant & $1.0$ & 0 & 11 \\
+\bottomrule
+\end{tabular}
+\caption{Observed worked-example results, with one trial per job.
+Times are the whole-second runtimes displayed by the CLI.
+These are staff-example experiments, not rewards for the five authored
+tasks or the two required self-authored mutants.}
+\label{tab:harbor-worked-example}
+\end{table}
+
+The reference passes all 15 pytest checks. The no-op is rejected because
+the required script and figure are absent.
+Its pytest summary includes three failures, one pass, and 11 setup errors
+from fixtures that cannot re-execute a missing plotting script.
+These are expected verifier failures for an empty submission, not 11
+Harbor infrastructure exceptions; the job reports zero exceptions.
+The pair demonstrates that this example rewards its reference and
+withholds reward from a no-answer submission.
+
+\paragraph{Measured accepted-mutant limitation.}
+For the required example-mutant experiment, the author copied the example
+to a fresh temporary directory and replaced only that copy's reference
+script with \path{harbor/example/mutants/illegible/solve.sh}.
+The original staff reference remained unchanged.
+The collected mutant script uses a $3\times2.2$ inch canvas at 100 DPI
+and 2pt title, axis-label, and tick text. The saved $300\times220$ PNG has
+extremely small text, a \texttt{hard\_to\_read} defect.
+However, its orchard totals remain
+$(558,420,1230,816)$ kg in the correct alphabetical order, and its
+\texttt{plotted\_values.json} agrees with those numbers.
+
+All 15 checks pass and the observed reward is $1.0$.
+The checks establish artifact validity, input integrity, data and structural
+properties, consistency with a fresh render, response to input perturbation,
+and agreement of the sidecar. None evaluates rendered-text legibility.
+Thus the accepted wrong answer measures an actual limitation, rather than
+merely asserting that the verifier might miss something.
+It motivates evaluating the rendered image as well as the declared numbers
+and plot structure. It does not prove that a VLM would catch this particular
+mutant: no VLM-validator call was made on this worked example.
+
+\paragraph{Worked-example reproduction and retained evidence.}
+The following commands reproduce the three experiments from the release root,
+with Docker running. Fresh job names are needed when retaining earlier jobs.
+\begin{verbatim}
+uv run harbor run -p harbor/example \
+  -a oracle --job-name example-oracle
+uv run harbor run -p harbor/example \
+  -a nop --job-name example-nop
+
+hw2_mutant_dir=$(mktemp -d \
+  /private/tmp/hw2-example-illegible.XXXXXX)
+cp -R harbor/example/. "${hw2_mutant_dir:?}/"
+cp harbor/example/mutants/illegible/solve.sh \
+  "${hw2_mutant_dir:?}/solution/solve.sh"
+uv run harbor run -p "${hw2_mutant_dir:?}" \
+  -a oracle --job-name example-illegible
+\end{verbatim}
+The corresponding local evidence is in
+\path{jobs/example-oracle/}, \path{jobs/example-nop/}, and
+\path{jobs/example-illegible/}: each has a job \texttt{result.json}
+and a trial's \path{verifier/reward.txt} and \path{verifier/pytest.log}.
+The reference and mutant also retain the delivered figure, script, and
+sidecar under the trial's \path{artifacts/app/} directory.
+The report records the outcomes; these local job logs do not replace any
+required submission artifacts.
+
+\paragraph{Authored Harbor packages and measured reference rewards.}
+All five authored task directories now have a completed Harbor instruction,
+pinned offline environment, \texttt{task.toml}, reference script, and
+task-specific deterministic checks. The added output contract asks for a
+re-runnable \texttt{plot.py}, its \texttt{figure.png}, and a precisely typed
+\texttt{plotted\_values.json}. Each verifier compares its sidecar with
+independently derived literal answers. It checks the chart's data and
+selected design requirements using a manifest captured during an isolated
+replay of the plotting script, then compares the replayed PNG bytes and
+sidecar with the delivered files. The original five task prompts and CSVs
+are preserved.
+
+Harbor 0.23.0 accepted each of the five packages in its preflight.
+Each was then run once against its own reference solution using
+\texttt{-a oracle}. The final-version runs had one trial each, no
+exceptions, and the rewards shown in Table~\ref{tab:authored-harbor}.
+The recommended \texttt{-a nop} check on
+\path{filtered_net_revenue} scored $0.0$ with zero exceptions.
+Thus the verifier gives a completed reference full credit while denying
+credit to an empty answer.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{p{0.50\linewidth}rr}
+\toprule
+Authored task & Oracle reward & Exceptions \\
+\midrule
+\path{filtered_net_revenue} & $1.0$ & 0 \\
+\path{panel_unit_labels} & $1.0$ & 0 \\
+\path{pooled_success_rates} & $1.0$ & 0 \\
+\path{semantic_unit_labels} & $1.0$ & 0 \\
+\path{shared_axis_scope} & $1.0$ & 0 \\
+\bottomrule
+\end{tabular}
+\caption{Five measured authored-task oracle runs. These are separate
+from the staff worked-example runs in Table~\ref{tab:harbor-worked-example}.}
+\label{tab:authored-harbor}
+\end{table}
+
+\paragraph{Two authored mutants and the measured verifier boundary.}
+The two scripts under
+\path{harbor/tasks/filtered_net_revenue/mutants/} were tested in
+separate temporary copies of the task. Neither replaced the submitted
+reference solution. The \path{ignore_status} mutant sums all orders,
+including failed and pending rows. It plots $(345,225,140,105)$ rather
+than the completed-only $(145,0,95,105)$ for North, South, East, and
+West. Its observed reward was $0.0$, with zero Harbor exceptions.
+The pytest log names
+\path{test_sidecar_net_revenue_matches_expected} as a failing test;
+the literal sidecar comparison reports
+\texttt{North: expected 145, got 345.0}. The plotted-bar value and
+required-annotation tests also fail, so the rejection is grounded in
+the answer's wrong data rather than an infrastructure error.
+
+The \path{illegible} mutant applies the correct completed-only
+calculation and preserves the required labels and numbers, but uses
+2pt text on a $300\times220$ PNG. Inspection of the saved PNG shows
+that the text is too small to read at its delivered size, a
+\texttt{hard\_to\_read} error. It nevertheless passed all four pytest
+checks: observed reward $1.0$ and zero exceptions. This is a measured
+limitation of the authored deterministic verifier. It checks that text
+exists, but does not measure rendered font size, overlap, or contrast.
+The worked-example mutant above is separate and does not count as
+either of these two authored mutants.
+
+\paragraph{Reproduction and retained evidence.}
+The following commands illustrate the authored checks from the release
+root. Use fresh job names if retaining the existing results.
+\begin{verbatim}
+for id in filtered_net_revenue panel_unit_labels \
+          pooled_success_rates semantic_unit_labels \
+          shared_axis_scope; do
+  uv run python harbor/preflight.py "harbor/tasks/$id"
+  uv run harbor run -p "harbor/tasks/$id" \
+    -a oracle --job-name "$id-oracle-final"
+done
+
+for mutant in ignore_status illegible; do
+  trial_dir=$(mktemp -d /private/tmp/hw2-"$mutant".XXXXXX)
+  cp -R harbor/tasks/filtered_net_revenue/. "$trial_dir/"
+  cp "harbor/tasks/filtered_net_revenue/mutants/$mutant/solve.sh" \
+    "$trial_dir/solution/solve.sh"
+  uv run harbor run -p "$trial_dir" -a oracle \
+    --job-name "filtered_net_revenue-$mutant-final"
+done
+\end{verbatim}
+The observed jobs are retained locally under
+\path{jobs/<task_id>-oracle-final/},
+\path{jobs/filtered_net_revenue-ignore_status-final/}, and
+\path{jobs/filtered_net_revenue-illegible-final/}. Their trial
+directories contain \path{verifier/reward.txt} and
+\path{verifier/pytest.log}. The job directories are development logs
+and are not required submission artifacts.
+
+The deterministic verifier can identify an execution failure in the
+specific sense that required files are missing, invalid, or not reproduced
+by the saved script. Its literal calculations and captured plot values can
+identify many \texttt{wrong\_data} cases for these five known tasks.
+Captured artist types, labels, panel arrangement, and axis relationships
+cover some \texttt{wrong\_chart} cases. They do not certify every spatial
+detail of annotations or labels. The PNG validity check cannot decide
+\texttt{hard\_to\_read}; a visually illegible but structurally correct
+plot can pass. The verifier also does not prove that a submission derived
+its values from the CSV rather than hard-coding the correct answer.
+The two measured authored mutants show one successful numerical check
+and one missed readability defect.
+
+A per-task verifier has the answer key and output schema for its own
+task. The validator evaluated on private runs receives unseen prompts
+and trajectories without an independent answer key, so these authored
+checks cannot replace that validator.
+
+The remaining end-to-end \texttt{check-submission} run belongs after
+the Part 4 predictions, report, and AI-usage declaration are complete.
 
 \section{Part 4: Iterate on Your Design}
 
