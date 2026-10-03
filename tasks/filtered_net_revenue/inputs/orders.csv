@@ -1,0 +1,11 @@
+region,status,gross,refund
+North,completed,120,20
+East,completed,80,10
+South,failed,150,0
+West,completed,90,15
+North,failed,200,0
+East,pending,50,5
+North,completed,60,15
+West,completed,40,10
+South,pending,75,0
+East,completed,30,5

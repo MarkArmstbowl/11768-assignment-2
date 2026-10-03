@@ -1,0 +1,8 @@
+{
+  "task_id": "panel_unit_labels",
+  "task_class": "scoped_design_labels",
+  "instructions": "Using matplotlib, read channels.csv. Each row gives a sales channel, its order count, and its refund rate as a percentage; use the numbers directly without aggregation.\nCreate one figure with two panels arranged in one row and two columns. In both panels, keep the sales channels in this left-to-right order: Retail, Wholesale, Online, Partners.\nThe left panel must be a vertical bar chart of orders, with the title \"Orders by channel\", a separate x-axis label \"Sales channel\", and a separate y-axis label \"Orders (count)\".\nThe right panel must be a vertical bar chart of refund_rate_pct, with the title \"Refund rate by channel\", a separate x-axis label \"Sales channel\", and a separate y-axis label \"Refund rate (%)\".\nBoth panels must have their own x- and y-axis labels; channel tick names or a single figure-level label do not replace these per-panel labels. Bar colors are unrestricted. Make the labels and tick names readable.\nSave the complete figure as figure.png in the workspace.",
+  "inputs": [
+    {"name": "channels.csv", "path": "inputs/channels.csv"}
+  ]
+}

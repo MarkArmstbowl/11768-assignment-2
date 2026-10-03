@@ -1,0 +1,8 @@
+{
+  "task_id": "pooled_success_rates",
+  "task_class": "data_design_separation",
+  "instructions": "Using matplotlib, read cohorts.csv. Each row gives successes and attempts for one group in one month. For each month, compute the overall success rate as 100 times the sum of successes divided by the sum of attempts across that month's groups. Do not take the unweighted arithmetic mean of the groups' individual success percentages, and do not pool different months together.\nPlot one line with circular markers for the four monthly percentages in this left-to-right order: Jan, Feb, Mar, Apr. Show one point per month, not one point per group.\nUse one panel titled \"Monthly pooled success rate\", with a separate x-axis label \"Month\" and a separate y-axis label \"Success rate (%)\". Set the y-axis limits to 0 and 100.\nAnnotate each point with its percentage to one decimal place and a percent sign. The line color is unrestricted. Keep the annotations, labels, and month tick names readable.\nSave the figure as figure.png in the workspace.",
+  "inputs": [
+    {"name": "cohorts.csv", "path": "inputs/cohorts.csv"}
+  ]
+}

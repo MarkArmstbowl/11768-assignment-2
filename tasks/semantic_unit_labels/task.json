@@ -1,0 +1,8 @@
+{
+  "task_id": "semantic_unit_labels",
+  "task_class": "scoped_design_labels",
+  "instructions": "Using matplotlib, read warmup.csv and plot the six supplied temperature observations in chronological order as one line with circular markers. The input time column is elapsed_seconds; convert it to minutes for the plotted x-values. The temperature_c column is already in degrees Celsius.\nUse a single panel with the title \"Temperature during warm-up\". Give it a separate x-axis label that states elapsed time in minutes and a separate y-axis label that states temperature in degrees Celsius.\nThe axis-label wording is not required to be verbatim: \"Time (min)\" and \"Elapsed time (minutes)\" are both acceptable x-axis labels, and \"Temperature (C)\" and \"Temperature (degrees Celsius)\" are both acceptable y-axis labels. Other wording that clearly expresses the same quantity and unit is also acceptable. Numeric tick labels alone do not satisfy the axis-label requirements.\nThe line color is unrestricted. Make all labels and plotted observations readable.\nSave the figure as figure.png in the workspace.",
+  "inputs": [
+    {"name": "warmup.csv", "path": "inputs/warmup.csv"}
+  ]
+}

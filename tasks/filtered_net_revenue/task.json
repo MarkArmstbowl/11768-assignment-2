@@ -1,0 +1,8 @@
+{
+  "task_id": "filtered_net_revenue",
+  "task_class": "data_design_separation",
+  "instructions": "Using matplotlib, read orders.csv. Each row is an order; gross and refund are amounts in USD.\nKeep only rows whose status is exactly \"completed\". For each region, compute net revenue by summing gross minus refund over those retained rows.\nPlot one vertical bar per region in this left-to-right order: North, South, East, West. Include all four regions even if a region has no retained rows; its net revenue is then zero. Do not plot individual orders or include failed or pending orders.\nUse one panel titled \"Completed-order net revenue\", with a separate x-axis label \"Region\" and a separate y-axis label \"Net revenue (USD)\". Start the y-axis at zero.\nAnnotate every bar with its integer net revenue, including a visible \"0\" for a zero-height bar. Bar colors are unrestricted. Keep the annotations, labels, and region tick names readable.\nSave the figure as figure.png in the workspace.",
+  "inputs": [
+    {"name": "orders.csv", "path": "inputs/orders.csv"}
+  ]
+}
