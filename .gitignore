@@ -11,5 +11,22 @@ __pycache__/
 # Harbor run artifacts
 /jobs/
 
+# Local course discussion notes (keep locally, not a submission deliverable)
+/piazza.md
+
+# Report build intermediates (report.tex and report.pdf must remain trackable)
+/report.aux
+/report.log
+/report.out
+/report.toc
+/report.lof
+/report.lot
+/report.fls
+/report.fdb_latexmk
+/report.synctex.gz
+/report.xdv
+/report.bbl
+/report.blg
+
 # OS metadata
 .DS_Store

@@ -1,0 +1,497 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+\setlength{\emergencystretch}{2em}
+
+\title{11-768 HW2: Evaluating a Data-Visualization Agent}
+\author{Yubo Chen\\Andrew ID: \texttt{yuboc}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{quote}
+\small
+\textbf{Working-draft status.}
+Part 1 below records the completed baseline experiment and two evidence-backed
+error analyses. The proposed changes have not yet been implemented or evaluated.
+Parts 2--4 are explicitly reserved for subsequent experiments; this is not yet
+the complete report for submission.
+\end{quote}
+
+\section{Part 1: Examine Seed Agent Runs}
+
+\subsection{Comparison of Ground-Truth and Validator Labels}
+\label{sec:baseline}
+
+\paragraph{Evaluation target and evidence.}
+The object being evaluated is the validator's ability to diagnose an existing
+visualization-agent run, not its ability to generate a new plot.
+The released \path{artifacts/<run_id>/result.json} files contain the task,
+input-file references, and agent trajectories; the corresponding
+\path{figure.png}, when present, is the final rendered artifact.
+The provided \path{seed_labels.json} supplies the human labels used for
+evaluation. The baseline's predictions are stored separately in
+\path{output/baseline_predictions.json}. All comparisons are keyed by
+\texttt{run\_id}, rather than relying on \texttt{task\_id} being unique.
+
+\paragraph{Baseline and serving configuration.}
+The experiment used the supplied, unmodified \path{validator/baseline.py}
+and the fixed judge model
+\path{Qwen/Qwen3-VL-30B-A3B-Instruct-FP8}, served under the alias
+\texttt{validator} by \path{infrastructure/validator_model.py}.
+The supplied deployment uses one L40S GPU, a maximum of one serving container,
+and a 32,768-token maximum model context. The validator client uses
+temperature zero; each baseline judgment requests at most 250 output tokens.
+No alternative judge model was used.
+
+For each run, the baseline first asks about execution failure. If that check
+returns an error, it stops evaluating the run. Otherwise, it separately asks
+about data correctness, chart design, and readability. Each question includes
+the task, serialized trajectory, input-file contents, and the figure if one
+exists. The installed baseline attempts full evidence first. On a recognized
+context-overflow error, its implementation compacts trajectory and input text
+and, if necessary, repeatedly downscales the image. This description follows
+the actual released implementation, rather than assuming that every request
+retains the original image resolution. The prediction file does not preserve
+the exact request used on each attempt, so I do not attribute any particular
+case below to truncation or downscaling.
+
+\paragraph{Reproduction commands and coverage.}
+The baseline was run and then scored using:
+\begin{verbatim}
+uv run python -m validator.runner \
+  --solution validator.baseline \
+  --artifacts artifacts \
+  --out output/baseline_predictions.json
+
+uv run python -m workflow score \
+  --labels seed_labels.json \
+  --predictions output/baseline_predictions.json
+\end{verbatim}
+The saved predictions cover all 110 released runs, with 110 unique run IDs,
+no missing IDs, no unexpected IDs, and no duplicate entries.
+Scoring requires matching label and prediction coverage; the results below
+are not scores on an incomplete subset.
+
+\paragraph{Scoring convention.}
+Each error family is a separate binary classification problem. Here TP means
+correctly reporting an error of that family; TN means correctly not reporting
+it; FP is a false alarm; and FN is a missed error. A TN for one family does not
+imply that the run is free of errors in other families.
+The Matthews correlation coefficient is
+\[
+ \mathrm{MCC}
+ =
+ \frac{TP\cdot TN-FP\cdot FN}
+ {\sqrt{(TP+FP)(TP+FN)(TN+FP)(TN+FN)}}.
+\]
+The scorer reports zero when the denominator is zero.
+The macro-MCC is the unweighted average of the four family MCCs, calculated
+from their unrounded values; it is not an accuracy percentage.
+
+There are 12 human-labeled execution failures. These runs are excluded from
+the other three families' confusion counts, as required by the assignment.
+Consequently, execution failure is scored on 110 runs and the other families
+on 98. A \emph{predicted} execution failure does not receive this exemption.
+Every family has both positive and negative ground-truth support in this set.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+Error family & Scored runs & TP & TN & FP & FN & MCC \\
+\midrule
+\texttt{execution\_failure} & 110 & 4 & 65 & 33 & 8 & $-0.0022$ \\
+\texttt{wrong\_data}        & 98  & 0 & 73 & 0  & 25 & $0.0000$ \\
+\texttt{wrong\_chart}       & 98  & 3 & 27 & 0  & 68 & $0.1096$ \\
+\texttt{hard\_to\_read}     & 98  & 0 & 59 & 0  & 39 & $0.0000$ \\
+\bottomrule
+\end{tabular}
+\caption{Measured baseline results against the released human labels.
+Macro-MCC is \textbf{0.0268}. Values are rounded to four decimal places.}
+\label{tab:baseline}
+\end{table}
+
+\paragraph{Where disagreements concentrate.}
+The baseline over-reports execution failure: it reports this family on
+37 runs, of which only four are true positives and 33 are false positives.
+It also misses eight of the 12 actual execution failures. This yields an
+execution MCC very close to zero.
+On the 98 runs eligible for the remaining families, it detects none of the
+25 data errors or 39 readability errors, and only three of 71 chart-design
+errors. The zero MCCs for data and readability reflect constant negative
+predictions, not zero accuracy: their TN counts are nonzero, but none of
+their positive examples are detected.
+
+The execution-first control flow contributes to downstream omissions:
+among the 33 falsely predicted execution failures, the human labels contain
+three \texttt{wrong\_data} positives, 14 \texttt{wrong\_chart} positives,
+and eight \texttt{hard\_to\_read} positives. These counts overlap across runs
+and must not be summed as a number of distinct runs.
+They also do not explain all downstream false negatives. In particular,
+the second error type below occurs on runs that were not stopped by the
+execution check.
+
+\paragraph{Case-analysis method and limitations.}
+For each selected example, the analysis compares the task requirements,
+the saved baseline prediction, the human label, the full trajectory
+(including tool calls and tool results), and the supplied final PNG.
+All four case-study images were opened, decoded, and visually inspected.
+The plotting scripts were not re-executed or used to replace these images.
+Agent-written claims of success are treated as claims to verify, not as
+independent ground truth. The saved prediction file retains explanations
+for reported errors, but not the raw responses for negative judgments;
+therefore, an empty error list alone cannot reveal the model's reasoning.
+
+\subsection{Validator Error Type 1}
+\label{sec:error-one}
+
+\paragraph{Recurring pattern: success/failure polarity mismatch.}
+Runs \textbf{022} and \textbf{079} are both assigned
+\texttt{execution\_failure}, even though their saved explanations say that
+the agent executed successfully and produced the final figure. Run 079
+explicitly states that \texttt{YES} is being used to indicate successful
+completion. This conflicts with the meaning of \texttt{YES} in the baseline's
+execution-failure question.
+These two independently inspected runs establish recurrence; this analysis
+does not assume that all 33 execution false positives share the same cause.
+
+\paragraph{Run 022: an acceptable artifact classified as failed execution.}
+The task asks for two genuinely separate, side-by-side subplots showing
+the same monthly active-user series: a linear y-axis on the left and a
+logarithmic y-axis on the right. Both axes in each panel must be labeled,
+and the titles must identify the scales.
+The trajectory records \texttt{python create\_figure.py} returning zero,
+followed by \texttt{ls -l figure.png} returning zero and listing a
+42,528-byte file. The final status is \texttt{Submitted}.
+The supplied 1200-by-500 PNG is readable and visibly contains the two
+separate linear/log panels (Figure~\ref{fig:run-022}).
+The human label is an empty error list.
+
+Nevertheless, the baseline labels the run \texttt{execution\_failure}.
+Its explanation begins \emph{The agent successfully completed the task} and
+also states that there was no crash, exhaustion of turns, or premature
+abandonment. The execution-failure label is therefore inconsistent with
+both the observable final artifact and the baseline's own explanation.
+This is an execution-family FP, not evidence that the agent failed to
+deliver a plot.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.97\linewidth]{artifacts/022/figure.png}
+\caption{The supplied final artifact for run 022. The separate linear and
+logarithmic panels are present; the human label is acceptable.}
+\label{fig:run-022}
+\end{figure}
+
+\paragraph{Run 079: completed rendering with a different, genuine error.}
+The task requests a filled 3D tricontour plot, with a radius range extending
+to 1.2, the CMRmap colormap, and an adjusted viewing angle.
+Both executions of \texttt{python generate\_plot.py} return zero.
+The first emits a Matplotlib deprecation warning, rather than a terminating
+exception; the revised script runs with no reported output.
+The code saves \texttt{figure.png}, the run ends as \texttt{Submitted},
+and the supplied 2340-by-1971 PNG can be decoded.
+
+Importantly, producing this image does \emph{not} mean that the task was
+fully satisfied. The final plotting call is a
+\texttt{contourf} projection with \texttt{zdir='z'} and a fixed
+\texttt{offset=np.min(Z)}. The supplied image shows contour bands on a flat
+plane at the bottom of the 3D box, rather than the requested filled 3D
+tricontour structure (Figure~\ref{fig:run-079}).
+The human label is therefore \texttt{wrong\_chart}, not
+\texttt{execution\_failure}.
+
+The baseline instead reports execution failure. Its explanation says
+that the script executed without errors and that the figure was saved,
+then explicitly states that the answer is \texttt{YES} to indicate that
+the agent finished successfully. In particular, it says
+\emph{the answer is} \texttt{YES} \emph{to indicate that the agent finished
+the task successfully}. The explanation's claim that the
+requested chart was fully correct should not be adopted as a fact:
+the final artifact and human label show otherwise.
+For this run, the baseline incurs an execution FP and a chart FN.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.68\linewidth]{artifacts/079/figure.png}
+\caption{Run 079 delivered a readable PNG, but the contours lie on a fixed
+z-plane. This supports the provided \texttt{wrong\_chart} label, not the
+baseline's \texttt{execution\_failure} label.}
+\label{fig:run-079}
+\end{figure}
+
+\paragraph{Implementation-level explanation and downstream consequence.}
+In \path{validator/baseline.py}, \texttt{judge\_execution} asks whether
+the agent crashed, exhausted its turns, or gave up without producing a
+valid figure. The intended answer for successful rendering is \texttt{NO}.
+However, \texttt{\_ask} accepts any answer beginning with \texttt{YES} as a
+positive for the current error family; it does not check whether the
+explanation supports the label. The saved output has already removed the
+leading answer token, so I do not claim to have a complete raw-response
+log. Run 079's retained explanation nevertheless explicitly documents
+the competing interpretation of \texttt{YES} as a success signal.
+The relevant source locations are \path{validator/baseline.py}, lines
+158--168, for answer parsing and the execution question, and lines
+194--198 for the early-return gate.
+
+Finally, \texttt{validate} returns immediately after an execution error.
+Thus the incorrect execution decision on 079 suppresses its later chart
+check. Correcting the gate would restore the opportunity to evaluate the
+chart; it would not by itself guarantee that the chart error is detected.
+The evidence supports a mismatch between question polarity, response
+meaning, and parsing, rather than a claim that the code reverses every
+YES/NO answer or that this mechanism explains every baseline error.
+
+\subsection{Validator Error Type 2}
+\label{sec:error-two}
+
+\paragraph{Recurring pattern: explicit axis-label omissions accepted.}
+Runs \textbf{021} and \textbf{202} omit axis titles explicitly required
+by their tasks, yet the baseline returns \texttt{errors: []} for both.
+Their human labels contain \texttt{wrong\_chart}. Neither run is predicted
+as an execution failure, so this pattern is distinct from the premature
+execution gate in Section~\ref{sec:error-one}.
+The common error is a false negative on a concrete design requirement,
+not a subjective preference about appearance.
+
+\paragraph{Run 021: tick labels mistaken for a labeled axis in the agent's
+self-check.}
+The task specifies a vertical box plot for the backend services
+\texttt{auth}, \texttt{catalog}, \texttt{search}, and \texttt{checkout},
+with the service names as x-tick labels, and separately requires the
+chart to \emph{label both axes}. The final image has the y-axis title
+\texttt{Latency (ms)} and the four service-name tick labels, but no
+x-axis title (Figure~\ref{fig:run-021}).
+The last successfully executed version of \texttt{plot\_latency.py}
+sets the y-label and title and rotates the ticks, but does not add an
+x-label. Its final execution returns zero, and the stored PNG is valid.
+Intermediate code errors were repaired; they are not evidence of a
+final execution failure.
+
+The human label identifies the missing x-label as \texttt{wrong\_chart},
+whereas the baseline returns an empty error list.
+The agent's final self-check lists the service names as \emph{X axis labels},
+illustrating the distinction that must be verified: tick labels identify
+individual categories, whereas an axis title identifies the axis.
+The task did not prescribe a particular x-axis-title string, so the
+violation is absence of a title, not failure to use an invented exact phrase.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.70\linewidth]{artifacts/021/figure.png}
+\caption{Run 021 has service-name tick labels and a y-axis title, but no
+x-axis title despite the explicit requirement to label both axes.}
+\label{fig:run-021}
+\end{figure}
+
+\paragraph{Run 202: required labels lost in the final script.}
+The task asks for standard and notched box plots in a 1-by-2 layout,
+with the x-axis label \texttt{Four separate samples}, the y-axis label
+\texttt{Measured values}, and horizontal gridlines in both panels.
+The final image retains the x-labels, but neither panel displays the
+required y-label; neither displays the requested gridlines
+(Figure~\ref{fig:run-202}).
+The human label records these two chart-design omissions, but the
+baseline again returns an empty error list.
+
+The trajectory is particularly informative. An earlier
+\texttt{generate\_boxplots.py} includes the y-labels and gridlines.
+Later, the agent writes a new \texttt{plot.py}; that final script retains
+\texttt{set\_xlabel} but omits \texttt{set\_ylabel} and the grid calls.
+It then successfully runs \texttt{python plot.py}, saves to
+\texttt{figure.png}, and submits. The last script and the supplied final
+image therefore corroborate the omissions.
+An earlier successful script cannot establish compliance after a later
+script has regenerated the output.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.97\linewidth]{artifacts/202/figure.png}
+\caption{Run 202 retains the x-axis labels, but the specified
+\texttt{Measured values} y-axis labels and horizontal grids are absent
+from both final panels.}
+\label{fig:run-202}
+\end{figure}
+
+\paragraph{Why a different check is needed.}
+The baseline asks a single broad question about whether the figure follows
+the requested chart design. It does not require an explicit audit of each
+requirement or identification of the final output-producing script.
+The two examples demonstrate that this procedure failed to detect
+clear axis-label omissions even when a figure was available.
+
+Possible contributing factors are confusing tick labels with axis titles,
+trusting the agent's self-description, or treating earlier correct code as
+evidence about the final figure. These are hypotheses motivated by the
+observed trajectories, not claims about the judge's hidden reasoning.
+In particular, the empty predictions do not preserve the negative
+responses, so it would be unsupported to quote an invented model
+explanation for either run.
+
+\subsection{Proposed Validator Changes}
+\label{sec:proposals}
+
+The following are \emph{proposals} motivated by the two observed error
+types. They have not yet been implemented, and no improved scores are
+claimed in Part 1.
+
+\paragraph{Change 1: artifact-grounded execution decisions with explicit
+failure polarity.}
+Replace the bare YES/NO execution interface with an explicit internal
+decision field, such as \texttt{execution\_failure: true/false}, plus
+specific supporting evidence. Define \texttt{true} only as failure to
+deliver a valid final figure, and \texttt{false} as permission to continue
+the remaining three checks, not as an assertion that the whole task is
+correct. Strictly validate the response schema and Boolean type rather
+than relying on a leading word or converting arbitrary strings to truth
+values.
+
+Ground the decision in the actual final artifact and trajectory:
+check whether the required image exists and can be decoded, and examine
+the final relevant tool results and output path. These filesystem and
+decoding checks are deterministic evidence; the interpretation of the
+trajectory and rendered content can remain model-based. A decodable PNG
+alone is not proof of correct data, correct design, or readability.
+Likewise, \texttt{Submitted} and an agent-written success claim are not
+sufficient proof, and a repaired intermediate exception does not establish
+final failure.
+
+A malformed or contradictory judge answer should trigger bounded
+rechecking or retry. If a reliable judgment cannot be obtained, raise a
+validator-side error so the existing runner can retry, rather than
+silently treating the run as acceptable or labeling the visualization
+agent as an execution failure. Do not invert labels merely because an
+explanation contains a word such as \emph{success}.
+When execution really fails, retain the terminal-family convention;
+otherwise, continue all three nonterminal checks.
+This targets the documented polarity mismatch in 022 and 079 while
+preserving the distinction between delivery and task compliance.
+
+\paragraph{Change 2: requirement-by-requirement audit of the final chart.}
+Extract the task's explicit chart-design requirements into a checklist,
+including their scope (which panel, axis, or whole figure they apply to).
+For each requirement, compare the final rendered figure with the last
+relevant output-producing code and tool results, recording a status such
+as pass, fail, or uncertain and concrete evidence.
+Explicitly distinguish axis titles from tick labels and verify exact
+text only when the task specifies exact text. Do not impose an additional
+x-label phrase on 021; do check \texttt{Measured values} on 202.
+
+The final image is the evidence of what was actually rendered.
+Trace the full tool-call sequence to identify later overwrites rather
+than searching the entire trajectory for any earlier occurrence of a
+correct plotting call. Code inspection is corroboration, not a universal
+static rule: labels may be produced by helper functions, shared figure
+labels, or other valid plotting APIs. Whether a shared label is sufficient
+depends on the task, not on an unconditional requirement to repeat every
+label on every panel.
+The agent's statement that requirements are satisfied is not a substitute
+for this audit.
+
+Uncertain items should receive targeted additional inspection with the
+same fixed judge model, rather than automatically passing. Confirmed
+design violations should be consolidated into one
+\texttt{wrong\_chart} error with specific evidence; for 202, that evidence
+can mention both the missing y-label and gridlines. This keeps category
+boundaries intact: missing required labels are chart errors, not
+execution failure, and missing text is not automatically a readability
+error. Formatting or request failures must not be hidden as ordinary
+uncertainty and then converted into an empty error list.
+This proposal specifically targets the axis-label false negatives in
+021 and 202, while the checklist mechanism generalizes to other explicitly
+requested design elements.
+
+\paragraph{Constraints and validation plan.}
+Both changes will be implemented only in the student validator while
+preserving \texttt{validate(run)} and the required list-of-errors output
+schema. The internal decision/checklist protocol does not replace the
+external \texttt{family}/\texttt{evidence} contract.
+All model-based steps will use the fixed Qwen3-VL judge; no other model
+will be called. The validator will operate on the current run's evidence,
+without loading \path{seed_labels.json}, using run-ID lookup tables, or
+consulting other candidate runs to choose a prediction.
+The original baseline and its prediction file will be preserved as the
+comparison point.
+
+Part 2 will test whether the changes reduce the targeted errors on the
+four case-study runs and on the complete seed set. It must also check
+for regressions: execution false negatives must not increase merely
+because the new check is too permissive, and the checklist must not
+invent requirements or reject permitted shared labels.
+All four family MCCs and macro-MCC will be compared with
+Table~\ref{tab:baseline}, alongside at least one remaining FP and FN.
+Structured output can still contain an incorrect semantic judgment,
+and a stricter evidence threshold can increase omissions; therefore,
+neither proposal is presented as a guaranteed improvement or as a
+demonstrated solution to the private grading set.
+
+\clearpage
+\section{Part 2: Improve Your Validator}
+
+\subsection{Implemented Changes}
+\emph{Pending the Part 2 implementation. No validator changes have been
+implemented in the experiments reported above.}
+
+\subsection{Seed-Set Performance vs.\ Baseline}
+\emph{Pending evaluation of the modified validator on all seed runs.
+No modified-validator scores are available yet.}
+
+\subsection{Qualitative Analysis of Targeted Error Types}
+\emph{Pending the new predictions: evaluate both targeted patterns,
+document regressions, and analyze at least one FP and one FN.}
+
+\section{Part 3: Design New Evaluation Tasks}
+
+\subsection{Anticipated Generalization Weaknesses}
+\emph{Pending analysis of two visualization-task classes that may challenge
+the Part 2 validator.}
+
+\subsection{Task Design}
+\emph{Pending at least five authored tasks, with at least two tasks in each
+of the two identified classes; document inputs, sources, and design rationale.}
+
+\subsection{Agent Runs and Labeling}
+\emph{Pending one run per authored task for each of the three fixed agents,
+and human review of every resulting run.}
+
+\subsection{Validator Performance on New Tasks}
+\emph{Pending the authored-run predictions and all four family MCCs plus
+macro-MCC; distinguish agent failures from validator mistakes.}
+
+\subsection{Harbor Packaging}
+\emph{Pending actual Harbor evaluations: all authored reference solutions
+must score 1.0; two plausible-but-wrong mutants must demonstrate rejection
+and acceptance respectively. The final report must explain both rewards,
+the verifier's boundaries for all four error families, and why a task-specific
+verifier cannot grade unknown private tasks.}
+
+\section{Part 4: Iterate on Your Design}
+
+\subsection{Additional Improvement Motivated by Part 3}
+\emph{Pending at least one additional improvement motivated by observed
+Part 3 results.}
+
+\subsection{Final Evaluation on Seed and New Tasks}
+\emph{Pending separate before/after comparisons on the seed and authored
+runs, reporting all four family MCCs and macro-MCC for each subset.}
+
+\subsection{Qualitative Analysis of Self-Authored Tasks}
+\emph{Pending case-based analysis of improvements and regressions,
+including at least one FP and one FN with trajectory evidence and a
+hypothesis for the error.}
+
+\subsection{Further Changes}
+\emph{Pending completion of the required experiments. Any further changes
+will be reported with their motivation and measured qualitative and
+quantitative effects; none are claimed in this draft.}
+
+\end{document}
